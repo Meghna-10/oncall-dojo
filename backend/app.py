@@ -70,9 +70,9 @@ def _stakeholder_ping(inc: Incident, role: str, reply_to: str | None = None):
     if inc.resolution == "full" and not was_resolved:
         return  # written while the outage was live; posting "ETA?" after RESOLVED reads wrong
     text = re.sub(r"\s*\*?\(\d+ words?\)\*?\s*$", "", text.strip()).strip('"')  # drop "(24 words)"
-    first = name.split()[0].rstrip(":")
-    if text.lower().startswith(first.lower() + ":"):  # model sometimes signs its own line
-        text = text[len(first) + 1:].strip()
+    # the model sometimes signs its own line: "Priya:", "Priya (Engineering Manager) ..."
+    first = re.escape(name.split()[0].rstrip(":"))
+    text = re.sub(rf"^{first}\b\s*(\([^)]*\))?\s*:?\s*", "", text, flags=re.I).strip()
     with lock:
         _say(inc, name, text)
 
