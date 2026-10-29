@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OnCall Dojo</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- Landing -->
+<section id="landing">
+  <div class="hero">
+    <div class="logo">🚨 OnCall <span>Dojo</span></div>
+    <h1>A flight simulator for production outages.</h1>
+    <p class="sub">Practise your first 3&nbsp;a.m. incident before it happens for real. An AI breaks a live system,
+      stressed colleagues ping you, a coach nudges you, and Nemotron writes your post-incident review.</p>
+    <div id="cards" class="cards"></div>
+    <button id="randomBtn" class="primary">🎲 Start a surprise incident</button>
+    <div class="powered">Powered by NVIDIA Nemotron Nano · Super · Ultra on Nebius Token Factory</div>
+  </div>
+</section>
+
+<!-- Pager -->
+<div id="pager" class="hidden">
+  <div class="pager-box">
+    <div class="pager-icon">📟</div>
+    <div class="pager-label">YOU ARE BEING PAGED</div>
+    <div id="pagerText" class="pager-text"></div>
+    <button id="ackBtn" class="danger">Acknowledge</button>
+  </div>
+</div>
+
+<!-- Incident -->
+<section id="incident" class="hidden">
+  <header class="bar">
+    <div class="logo small">🚨 OnCall <span>Dojo</span></div>
+    <div id="incTitle" class="inc-title"></div>
+    <div id="statusPill" class="pill crit">CRITICAL</div>
+    <div id="timer" class="timer">00:00</div>
+    <div class="spacer"></div>
+    <div id="aiMode" class="ai-mode"></div>
+    <button id="hintBtn">💡 Hint</button>
+    <button id="endBtn" class="primary">End &amp; review</button>
+  </header>
+
+  <main class="grid">
+    <div class="dash" id="dash"></div>
+
+    <div class="term">
+      <div class="term-head">prod-bastion-01 <span>type <b>help</b> to start</span></div>
+      <div id="termOut" class="term-out"></div>
+      <div class="term-in"><span class="ps">oncall@prod:~$</span><input id="termIn" autocomplete="off" spellcheck="false"></div>
+    </div>
+
+    <aside class="chat">
+      <div class="chat-head"># incident-war-room</div>
+      <div id="chatLog" class="chat-log"></div>
+      <form id="chatForm" class="chat-in">
+        <input id="chatIn" placeholder="Post a status update to the team…" autocomplete="off">
+      </form>
+    </aside>
+  </main>
+</section>
+
+<!-- Review -->
+<div id="review" class="hidden">
+  <div class="review-box">
+    <div class="review-top">
+      <div id="grade" class="grade">A</div>
+      <div>
+        <div id="scoreLine" class="score-line"></div>
+        <ul id="breakdown" class="breakdown"></ul>
+      </div>
+    </div>
+    <div class="review-label">Post-incident review · written by Nemotron Ultra</div>
+    <div id="reviewText" class="review-text"></div>
+    <div class="review-label">AI used in this drill</div>
+    <div id="aiUsage" class="ai-usage"></div>
+    <div class="review-actions">
+      <button id="againBtn" class="primary">Run another drill</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
