@@ -2,6 +2,8 @@
 
 > Practise your first 3 a.m. incident before it happens for real.
 
+**▶ Live demo: https://oncall-dojo.onrender.com** (free hosting: the first visit may take ~1 min to wake up)
+
 **Track:** Best Apps and Agents · **License:** MIT · **Built during the hackathon submission period** (new project, no prior code)
 
 New engineers usually learn incident response on a real outage, with real customers
