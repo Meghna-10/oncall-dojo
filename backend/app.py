@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import random
+import re
 import threading
 import time
 from pathlib import Path
@@ -62,9 +63,13 @@ def _stakeholder_ping(inc: Incident, role: str, reply_to: str | None = None):
            f"Engineer has sent {inc.status_updates} status update(s). "
            f"Incident status: {'RESOLVED - alerts have cleared, be relieved and ask for a summary' if inc.resolution == 'full' else 'still ongoing'}.")
     if reply_to:
-        ctx += f"\nThe engineer just wrote: \"{reply_to}\". React to it in one short message."
+        ctx += (f"\nThe on-call engineer (not you) just posted: \"{reply_to}\". "
+                f"Write {name}'s reply to them, in {name}'s own voice.")
+    was_resolved = inc.resolution == "full"
     text = llm.chat("nano", system, ctx, max_tokens=80, fallback=random.choice(FALLBACK_PINGS[role]))
-    text = text.strip().strip('"')
+    if inc.resolution == "full" and not was_resolved:
+        return  # written while the outage was live; posting "ETA?" after RESOLVED reads wrong
+    text = re.sub(r"\s*\*?\(\d+ words?\)\*?\s*$", "", text.strip()).strip('"')  # drop "(24 words)"
     first = name.split()[0].rstrip(":")
     if text.lower().startswith(first.lower() + ":"):  # model sometimes signs its own line
         text = text[len(first) + 1:].strip()
