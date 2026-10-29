@@ -119,3 +119,10 @@ button.danger { background: var(--red); color: #fff; border: 0; font-weight: 700
   .chat { grid-row: auto; grid-column: auto; }
   .dash { grid-template-columns: repeat(2, 1fr); }
 }
+@media (max-width: 640px) {
+  .bar { flex-wrap: wrap; gap: 8px 10px; }
+  .bar .spacer, .ai-mode { display: none; }
+  .inc-title { flex-basis: 100%; order: 5; }
+  .bar button { padding: 6px 10px; }
+  .hero h1 { font-size: 32px; }
+}

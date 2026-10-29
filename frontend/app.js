@@ -9,9 +9,23 @@ async function api(path, body) {
     headers: { "Content-Type": "application/json", "X-Session": SID },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+  if (r.status === 404 && path !== "scenarios") { sessionLost(); throw new Error("session lost"); }
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
+
+// the server restarted (e.g. a free host waking from sleep): say so instead of going silent
+function sessionLost() {
+  clearInterval(poll);
+  if (!$("incident").classList.contains("hidden")) {
+    term("!! This drill was lost because the server restarted. Click '← New drill' to start again.", "err");
+    $("endBtn").textContent = "← New drill";
+    $("endBtn").onclick = () => location.reload();
+  }
+}
+window.addEventListener("unhandledrejection", (e) => {
+  if (String(e.reason).includes("session lost")) e.preventDefault();
+});
 
 const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
 const mmss = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");

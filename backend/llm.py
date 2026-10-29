@@ -36,7 +36,9 @@ def online() -> bool:
 def _get_client():
     global _client
     if _client is None:
-        _client = OpenAI(base_url=BASE_URL, api_key=os.getenv("NEBIUS_API_KEY"))
+        # never let a slow or unreachable API freeze a drill: give up and use the fallback
+        _client = OpenAI(base_url=BASE_URL, api_key=os.getenv("NEBIUS_API_KEY"),
+                         timeout=40, max_retries=0)
     return _client
 
 
