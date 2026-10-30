@@ -32,26 +32,41 @@ const mmss = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s
 const show = (id) => ["landing", "incident", "review"].forEach((x) => $(x).classList.toggle("hidden", x !== id));
 
 // ---------- landing ----------
-const CARD_INFO = {
-  slow_query: ["🐢", "Checkout requests are timing out and customers can't pay."],
-  memory_leak: ["💥", "The payments service keeps crashing and restarting."],
-  bad_config: ["⏱️", "Every payment fails, but the payments service looks healthy."],
-  cache_stampede: ["🌊", "Every page is slow and the database is overloaded."],
-};
+let library = [], tab = "All";
 async function loadScenarios() {
-  const list = await api("scenarios");
-  $("cards").innerHTML = list.map((s) => {
-    const [ic, d] = CARD_INFO[s.id] || ["🚨", ""];
-    return `<div class="card" data-id="${s.id}">
-      <div class="ic">${ic}</div>
-      <div class="t">${esc(s.title)}</div>
-      <div class="d">${esc(d)}</div>
-      <div class="meta"><span class="diff ${s.difficulty}">${s.difficulty}</span><span class="go">Start drill →</span></div>
-    </div>`;
+  library = await api("scenarios");
+  $("nScen").textContent = library.length;
+  const cats = ["All", ...new Set(library.map((s) => s.category))];
+  $("tabs").innerHTML = cats.map((c) => {
+    const n = c === "All" ? library.length : library.filter((s) => s.category === c).length;
+    return `<button class="tab${c === tab ? " on" : ""}" data-cat="${esc(c)}">${esc(c === "All" ? "All scenarios" : c)} <span>${n}</span></button>`;
   }).join("");
-  document.querySelectorAll(".card").forEach((c) => (c.onclick = () => start(c.dataset.id)));
+  document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => {
+    tab = b.dataset.cat;
+    document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("on", x === b));
+    renderCards();
+  }));
+  renderCards();
 }
+function renderCards() {
+  const q = $("search").value.trim().toLowerCase(), d = $("fDiff").value, dur = $("fDur").value;
+  const shown = library.filter((s) => (tab === "All" || s.category === tab) && (!d || s.difficulty === d)
+    && (!dur || String(s.duration) === dur)
+    && (!q || (s.title + " " + s.description + " " + s.category).toLowerCase().includes(q)));
+  $("count").textContent = `${shown.length} of ${library.length} incidents`;
+  $("cards").innerHTML = shown.length ? shown.map((s) => `
+    <div class="card" data-id="${s.id}">
+      <div class="card-top"><span class="ic">${s.icon}</span><span class="cat">${esc(s.category)}</span></div>
+      <div class="t">${esc(s.title)}</div>
+      <div class="d">${esc(s.description)}</div>
+      <div class="meta"><span class="diff ${s.difficulty}">${s.difficulty}</span><span>⏱ ~${s.duration} min</span>
+        <span class="go">Start drill →</span></div>
+    </div>`).join("") : `<p class="muted">No incidents match these filters.</p>`;
+  document.querySelectorAll(".card").forEach((c) => { c.onclick = () => start(c.dataset.id); tilt(c, 10); });
+}
+["search", "fDiff", "fDur"].forEach((id) => $(id).addEventListener("input", renderCards));
 $("randomBtn").onclick = () => start(null);
+$("randomBtn2").onclick = () => start(null);
 document.querySelectorAll("[data-scroll]").forEach((b) =>
   (b.onclick = () => $(b.dataset.scroll).scrollIntoView({ behavior: "smooth" })));
 
@@ -314,4 +329,4 @@ document.querySelectorAll("#landing .section").forEach((s) => {
   s.classList.add("reveal"); io.observe(s);
 });
 
-loadScenarios().then(() => document.querySelectorAll(".card").forEach((c) => tilt(c, 10)));
+loadScenarios();

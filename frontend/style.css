@@ -269,3 +269,18 @@ button.danger { background: var(--red); color: #fff; border: 0; font-weight: 800
   .bg3d .orb, .bg3d .grid, .preview { animation: none; }
   .reveal { opacity: 1; transform: none; transition: none; }
 }
+
+/* ================= INCIDENT LIBRARY ================= */
+.lib-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 12px; }
+.tab { border-radius: 99px; padding: 7px 14px; font-size: 13px; color: var(--muted); background: var(--panel); }
+.tab span { opacity: .7; margin-left: 4px; font-size: 12px; }
+.tab.on { background: var(--grad); color: #2a1028; border-color: transparent; font-weight: 700; }
+.filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+.filters input, .filters select { background: var(--panel); border: 1px solid var(--line); color: var(--text);
+  border-radius: 10px; padding: 9px 12px; font: inherit; font-size: 14px; outline: 0; }
+.filters input { flex: 1; min-width: 220px; }
+.filters input:focus, .filters select:focus { border-color: var(--nv); }
+.card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card .cat { font-size: 11px; color: var(--muted); text-align: right; }
+.card .meta { gap: 8px; }

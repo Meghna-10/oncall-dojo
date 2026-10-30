@@ -34,7 +34,7 @@
         <button class="ghost big" data-scroll="scenarios">Choose a scenario</button>
       </div>
       <div class="hero-stats">
-        <div><b>4</b><span>realistic outages</span></div>
+        <div><b id="nScen">21</b><span>realistic outages</span></div>
         <div><b>3</b><span>Nemotron models</span></div>
         <div><b>~5 min</b><span>per drill</span></div>
         <div><b>0</b><span>risk to real systems</span></div>
@@ -76,8 +76,26 @@
   </section>
 
   <section id="scenarios" class="section">
-    <h2>Choose an outage to practise</h2>
-    <p class="muted">The root cause stays hidden until your review.</p>
+    <div class="lib-head">
+      <div>
+        <h2>Incident library</h2>
+        <p class="muted">Real-world outage types. The root cause stays hidden until your review.</p>
+      </div>
+      <button id="randomBtn2" class="ghost">🎲 Random incident</button>
+    </div>
+    <div id="tabs" class="tabs"></div>
+    <div class="filters">
+      <input id="search" type="search" placeholder="Search by symptom… e.g. slow, payment, logged out, crashing">
+      <select id="fDiff">
+        <option value="">All difficulties</option><option value="easy">Easy</option>
+        <option value="medium">Medium</option><option value="hard">Hard</option>
+      </select>
+      <select id="fDur">
+        <option value="">Any duration</option><option value="5">~5 min</option>
+        <option value="10">~10 min</option><option value="15">~15 min</option>
+      </select>
+      <span id="count" class="muted"></span>
+    </div>
     <div id="cards" class="cards"></div>
   </section>
 
@@ -133,7 +151,11 @@
       <div class="term-head"><span>Terminal · prod-bastion-01</span>
         <div class="quick">
           <button data-cmd="status">Check all services</button>
-          <button data-cmd="logs db">Database logs</button>
+          <button data-cmd="logs gateway">Logs: gateway</button>
+          <button data-cmd="logs orders">Logs: orders</button>
+          <button data-cmd="logs payments">Logs: payments</button>
+          <button data-cmd="logs db">Logs: db</button>
+          <button data-cmd="logs cache">Logs: cache</button>
           <button data-cmd="deploys">Recent deploys</button>
           <button data-cmd="config diff gateway">Config changes</button>
           <button data-cmd="crontab">Scheduled jobs</button>

@@ -91,7 +91,10 @@ class ChatReq(BaseModel):
 
 @app.get("/api/scenarios")
 def scenarios():
-    return [{"id": s.id, "title": s.title, "difficulty": s.difficulty} for s in SCENARIOS.values()]
+    # card data only: the root cause, fixes and clues never leave the server before the review
+    return [{"id": s.id, "title": s.title, "difficulty": s.difficulty, "category": s.category,
+             "icon": s.icon, "description": s.description, "duration": s.duration}
+            for s in SCENARIOS.values()]
 
 
 @app.post("/api/incident")
@@ -154,13 +157,7 @@ def hint(x_session: str = Header(...)):
     user = (f"Hidden root cause: {inc.scenario.root_cause}\nPager: {inc.scenario.page}\n"
             f"Commands tried so far:\n{recent}\n"
             "Available tools: status, logs <svc>, grep, metrics, deploys, config diff, crontab.")
-    fallback = {
-        "slow_query": "Something changed recently. Which service deployed last, and what is the database complaining about in its logs?",
-        "memory_leak": "Watch the memory of the failing service over a minute. What changed in that service recently?",
-        "bad_config": "Is the failing service actually unhealthy, or is someone giving up on it too early? Compare configs.",
-        "cache_stampede": "The database is drowning. Why would traffic suddenly stop being absorbed upstream? Check what runs on a schedule.",
-    }[inc.scenario.id]
-    text = llm.chat("super", system, user, max_tokens=120, fallback=fallback)
+    text = llm.chat("super", system, user, max_tokens=120, fallback=inc.scenario.hint)
     _say(inc, "Coach (Nemotron Super)", text, kind="hint")
     return {"hint": text}
 

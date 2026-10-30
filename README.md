@@ -13,8 +13,12 @@ OnCall Dojo gives engineers the same kind of practice.
 ## What it does
 
 1. **You get paged.** A live (simulated) production stack of `gateway`, `orders`,
-   `payments`, `db` and `cache` breaks in a realistic way: a slow query from a fresh
-   deploy, a memory leak, a one-character config typo, or a cache stampede.
+   `payments`, `db` and `cache` breaks in one of **21 realistic ways** across 5
+   categories (API & Application, Database, Infrastructure & Cloud, Network & Security,
+   Payments & Microservices): slow queries, memory leaks, config typos, expired TLS
+   certificates, DNS mistakes, deadlocks, full disks, retry storms, provider outages,
+   queue backlogs and more. Each one has its own metrics, logs, clues, fix and scoring,
+   defined as data in `backend/scenarios.py`, so adding a new incident needs no engine code.
 2. **You investigate in a real terminal.** You have logs, metrics, deploy history,
    config diffs and crontab. There are red herrings in the logs, just like real life.
 3. **People ping you.** A stressed engineering manager and a frantic support agent

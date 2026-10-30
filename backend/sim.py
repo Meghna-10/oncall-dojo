@@ -25,99 +25,21 @@ BASELINE = {
 HISTORY_LEN = 90
 
 
-@dataclass
-class Scenario:
-    id: str
-    title: str
-    page: str                # what the pager says
-    root_cause: str          # hidden from the trainee, used for grading + AI coach
-    fixes: dict              # command -> ("full"|"partial", explanation)
-    harmful: dict            # command prefix -> penalty explanation
-    difficulty: str
+from scenarios import SCENARIOS, Scenario  # noqa: E402,F401  (scenario library lives in its own file)
 
-
-SCENARIOS = {
-    "slow_query": Scenario(
-        id="slow_query",
-        title="Checkout is timing out",
-        page="CRITICAL: gateway 5xx rate > 25% on /api/checkout",
-        root_cause=("orders v2.4.1 (deployed 6 min before the page) added "
-                    "'SELECT * FROM orders WHERE customer_id = ?' with no index on "
-                    "customer_id. Sequential scans pin db CPU at ~98%, orders p99 "
-                    "climbs past 4s and the gateway returns 504s."),
-        fixes={
-            "rollback orders": ("full", "Rolled back the deploy that introduced the slow query."),
-            "db add-index orders.customer_id": ("full", "Added the missing index; the query is fast again."),
-            "restart db": ("partial", "Restart cleared connections but the slow query returns immediately."),
-        },
-        harmful={
-            "flush cache": "Flushing the cache during a DB overload sends even more traffic to the db.",
-            "scale db": "The db is CPU-bound on one bad query; more replicas only spread the pain.",
-        },
-        difficulty="medium",
-    ),
-    "memory_leak": Scenario(
-        id="memory_leak",
-        title="Payments keep crashing",
-        page="CRITICAL: payments pods restarting (OOMKilled) - card payments failing",
-        root_cause=("payments v1.9.0 caches every fraud-check response in an "
-                    "unbounded in-process dict. Memory grows ~3%/s until the pod is "
-                    "OOMKilled; each restart buys ~30s before it dies again."),
-        fixes={
-            "rollback payments": ("full", "Rolled back to v1.8.3, which has a bounded LRU cache."),
-            "restart payments": ("partial", "Restart frees memory but the leak refills it within a minute."),
-        },
-        harmful={
-            "restart db": "Restarting a healthy database caused a needless outage for every service.",
-            "flush cache": "The shared cache was healthy; flushing it slowed every service.",
-        },
-        difficulty="easy",
-    ),
-    "bad_config": Scenario(
-        id="bad_config",
-        title="Every payment times out",
-        page="CRITICAL: 100% of payment attempts failing with upstream timeout",
-        root_cause=("A config push changed gateway 'payments.timeout_ms' from 5000 to "
-                    "50 (typo). Payments is healthy, but the gateway gives up after 50ms, "
-                    "so every payment call is reported as a timeout."),
-        fixes={
-            "config rollback gateway": ("full", "Reverted the gateway config to the previous version."),
-            "config set gateway payments.timeout_ms=5000": ("full", "Restored the correct upstream timeout."),
-        },
-        harmful={
-            "restart payments": "Payments was never broken; restarting it dropped in-flight charges.",
-            "rollback payments": "Rolled back a healthy service; the real problem was the gateway config.",
-            "scale payments": "Payments had spare capacity; the timeout lives in the gateway config.",
-        },
-        difficulty="hard",
-    ),
-    "cache_stampede": Scenario(
-        id="cache_stampede",
-        title="Whole site is slow",
-        page="WARNING: p99 latency > 3s on all endpoints, db connections at 98%",
-        root_cause=("A cron job ran 'FLUSHALL' on the cache at 02:58. With a cold cache "
-                    "every request goes to the db; db connections saturate and every "
-                    "service slows down (a cache stampede)."),
-        fixes={
-            "cache warm": ("full", "Warmed the hot keys; the db load fell back to normal."),
-            "disable cron cache-cleanup": ("partial", "Stopped the job from repeating, but the cache is still cold."),
-        },
-        harmful={
-            "restart db": "Restarting the db dropped all connections and made the stampede worse.",
-            "rollback orders": "orders' latest deploy was days old and unrelated.",
-        },
-        difficulty="medium",
-    ),
-}
-
-CONFIGS = {
+CONFIGS = {  # last known-good config; scenarios override keys to inject faults
     "gateway": {"payments.timeout_ms": 5000, "orders.timeout_ms": 3000,
-                "retries": 2, "rate_limit_rps": 2000},
-    "orders": {"db.pool_size": 50, "cache.ttl_s": 300, "feature.new_history_api": True},
-    "payments": {"fraud_check.enabled": True, "fraud_cache": "lru(10000)"},
+                "retries": 2, "rate_limit_rps": 2000, "jwt.key_id": "k1"},
+    "orders": {"db.pool_size": 50, "cache.ttl_s": 300, "feature.new_history_api": False,
+               "feature.recommendations": False},
+    "payments": {"fraud_check.enabled": True, "fraud_cache": "lru(10000)", "provider": "PayFast"},
     "db": {"max_connections": 500, "slow_query_log_ms": 500},
-    "cache": {"maxmemory": "4gb", "eviction": "allkeys-lru"},
+    "cache": {"maxmemory": "4gb", "eviction": "allkeys-lru", "min_replicas": 3},
 }
+
+CRON = ["cache-cleanup     58 2 * * *    redis-cli FLUSHALL",
+        "db-backup         0 3 * * *     pg_dump --format=custom",
+        "report-mailer     0 6 * * 1     python send_weekly.py"]
 
 DEPLOYS = {
     "gateway": [("v3.2.0", "3 days ago"), ("v3.1.4", "9 days ago")],
@@ -163,15 +85,12 @@ class Incident:
         import copy
         self.configs = copy.deepcopy(CONFIGS)
         self.deploys = {k: list(v) for k, v in DEPLOYS.items()}
-        sid = self.scenario.id
-        if sid == "slow_query":
-            self.deploys["orders"].insert(0, ("v2.4.1", "6 min ago"))
-        elif sid == "memory_leak":
-            self.deploys["payments"].insert(0, ("v1.9.0", "25 min ago"))
-            self.configs["payments"]["fraud_cache"] = "dict()  # unbounded"
-        elif sid == "bad_config":
-            self.configs["gateway"]["payments.timeout_ms"] = 50
-            self._config_prev = {"payments.timeout_ms": 5000}
+        sc = self.scenario
+        if sc.deploy:
+            svc, ver, when = sc.deploy
+            self.deploys[svc].insert(0, (ver, when))
+        for svc, kv in sc.config.items():
+            self.configs[svc].update(kv)
         self.history = {s: {m: [] for m in ("rps", "err", "p99", "cpu", "mem")} for s in SERVICES}
         self.last_tick = self.started - HISTORY_LEN
         self.tick()
@@ -193,27 +112,17 @@ class Incident:
         rps, err, p99, cpu, mem = BASELINE[svc]
         j = lambda v, pct=0.06: max(0.0, v * (1 + random.uniform(-pct, pct)))
         rps, err, p99, cpu, mem = j(rps), j(err, .5), j(p99, .1), j(cpu), j(mem, .02)
-        sid = self.scenario.id
         faulted = t >= self.started and self.broken(t)
         if faulted:
-            if sid == "slow_query":
-                if svc == "db": cpu, p99 = j(97, .02), j(2400, .2)
-                if svc == "orders": p99, err = j(4200, .15), j(18, .2)
-                if svc == "gateway": err, p99 = j(27, .15), j(5000, .05)
-            elif sid == "memory_leak":
-                if svc == "payments":
-                    self.leak_mem = min(99.0, self.leak_mem + 3)
-                    if self.leak_mem >= 99:
-                        self.leak_mem = 35.0  # OOMKilled -> restarted
-                    mem, err, p99 = self.leak_mem, j(30, .3), j(1800, .2)
-                if svc == "gateway": err = j(9, .2)
-            elif sid == "bad_config":
-                if svc == "gateway": err = j(21, .1)
-                if svc == "payments": rps = j(88)   # payments looks perfectly healthy
-            elif sid == "cache_stampede":
-                if svc == "cache": rps = j(300)
-                if svc == "db": cpu, rps, p99 = j(91, .03), j(4100), j(900, .2)
-                if svc in ("orders", "payments", "gateway"): p99 = j(3400, .15); err = j(4, .3)
+            m = {"rps": rps, "err": err, "p99": p99, "cpu": cpu, "mem": mem}
+            for k, target in self.scenario.effects.get(svc, {}).items():
+                m[k] = j(target, .1)
+            rps, err, p99, cpu, mem = m["rps"], m["err"], m["p99"], m["cpu"], m["mem"]
+            if self.scenario.id == "memory_leak" and svc == "payments":  # memory climbs, then OOM
+                self.leak_mem = min(99.0, self.leak_mem + 3)
+                if self.leak_mem >= 99:
+                    self.leak_mem = 35.0  # OOMKilled -> restarted
+                mem, err, p99 = self.leak_mem, j(30, .3), j(1800, .2)
         if t < self.harm_until and svc in ("gateway", "orders", "payments"):
             err, p99 = err + 15, p99 + 1500
         return round(rps), round(err, 2), round(p99), round(min(cpu, 100), 1), round(min(mem, 100), 1)
@@ -243,25 +152,14 @@ class Incident:
             self._log(t, *random.choice(NOISE_LOGS))
         if not self.broken(t) or t < self.started:
             return
-        sid = self.scenario.id
         r = random.random
-        if sid == "slow_query":
-            if r() < .6: self._log(t, "db", "WARN", f"slow query ({random.randint(2100, 4800)}ms): SELECT * FROM orders WHERE customer_id = $1  -- Seq Scan on orders (rows=18.2M)")
-            if r() < .5: self._log(t, "orders", "ERROR", "GET /orders/history: context deadline exceeded after 3000ms")
-            if r() < .5: self._log(t, "gateway", "ERROR", "upstream orders returned 504 for /api/checkout")
-        elif sid == "memory_leak":
+        for svc, lvl, msg, prob in self.scenario.logs:
+            if r() < prob:
+                self._log(t, svc, lvl, msg.replace("{n}", str(random.randint(1200, 4900))))
+        if self.scenario.id == "memory_leak":
             if r() < .4: self._log(t, "payments", "WARN", f"heap usage {int(self.leak_mem)}% - fraud_cache entries={random.randint(200, 900)}k")
             if self.leak_mem < 40 and r() < .8: self._log(t, "payments", "ERROR", "container killed: OOMKilled (exit 137), restarting (restarts=14)")
             if r() < .3: self._log(t, "gateway", "ERROR", "upstream payments: connection refused")
-        elif sid == "bad_config":
-            if r() < .7: self._log(t, "gateway", "ERROR", "upstream payments timeout after 50ms (POST /api/pay)")
-            if r() < .3: self._log(t, "payments", "INFO", f"POST /charge 200 in {random.randint(180, 260)}ms")
-            if r() < .1: self._log(t, "payments", "WARN", "client closed connection before response was written")
-        elif sid == "cache_stampede":
-            if r() < .5: self._log(t, "cache", "INFO", f"keyspace hits=0.{random.randint(1, 9)}% misses high")
-            if r() < .5: self._log(t, "db", "WARN", "remaining connection slots are reserved (connections 491/500)")
-            if r() < .4: self._log(t, "orders", "WARN", "cache MISS product:* - falling back to db")
-            if r() < .05: self._log(t, "cache", "INFO", "cron[cache-cleanup] executed FLUSHALL at 02:58 (schedule: 58 2 * * *)")
 
     # ---------- commands ----------
     def run(self, raw: str) -> str:
@@ -299,8 +197,12 @@ class Incident:
             svc = cmd.split()[1]
             if len(self.deploys[svc]) > 1:
                 self.deploys[svc].pop(0)
-        if cmd.startswith("config rollback gateway") or cmd.startswith("config set gateway"):
-            self.configs["gateway"]["payments.timeout_ms"] = 5000
+        parts = cmd.split()
+        if cmd.startswith("config rollback ") and parts[2] in CONFIGS:
+            self.configs[parts[2]] = dict(CONFIGS[parts[2]])
+        if cmd.startswith("config set ") and len(parts) >= 4 and "=" in parts[3]:
+            k, v = parts[3].split("=", 1)
+            self.configs[parts[2]][k] = v
         if self.scenario.id == "memory_leak" and cmd == "rollback payments":
             self.configs["payments"]["fraud_cache"] = "lru(10000)"
         if cmd == "restart payments":
@@ -315,11 +217,25 @@ class Incident:
         if cmd.startswith("db add-index"):
             return "CREATE INDEX CONCURRENTLY idx_orders_customer_id ... done (41s)"
         if cmd.startswith("config"):
-            return "config applied to gateway (3/3 instances reloaded)"
+            return f"config applied to {cmd.split()[2]} (3/3 instances reloaded)"
         if cmd == "cache warm":
             return "warming 48,210 hot keys from db snapshot ... done"
         if cmd.startswith("disable cron"):
-            return "cron job cache-cleanup disabled"
+            return f"cron job {cmd.split()[-1]} disabled"
+        if cmd.startswith("scale"):
+            return f"{cmd.split()[1]} scaled to {cmd.split()[2]} replicas ... ready"
+        if cmd.startswith("cert renew"):
+            return "ACME order placed ... certificate issued (valid 90 days) ... reloaded"
+        if cmd == "dns rollback":
+            return "payments.internal -> 10.0.4.21 (previous record) ... propagated"
+        if cmd.startswith("failover"):
+            return f"{cmd.split()[1]}: switched to standby ... healthy"
+        if cmd.startswith("queue scale"):
+            return f"order-events consumers -> {cmd.split()[2]} ... backlog draining"
+        if cmd.startswith("disk cleanup"):
+            return "removed 61 GB of old logs ... disk 72%"
+        if cmd == "db kill-locks":
+            return "terminated 14 blocked transactions"
         return "done"
 
     # ---------- view ----------
@@ -385,6 +301,12 @@ def c_help(inc, a):
   cache warm | flush cache       warm or flush the shared cache
   crontab                        list scheduled jobs
   disable cron <name>            disable a scheduled job
+  db kill-locks                  kill blocked database transactions
+  disk cleanup <svc>             delete old logs and temp files
+  cert renew <svc>               issue a new TLS certificate
+  dns rollback                   restore the previous internal DNS records
+  failover <svc>                 switch db primary region / payment provider
+  queue scale <n>                set the number of queue consumers
   clear                          clear the terminal"""
 
 
@@ -459,10 +381,7 @@ def c_noop(inc, a, name=""):
 
 
 def c_crontab(inc, a):
-    return ("NAME            SCHEDULE      COMMAND\n"
-            "cache-cleanup   58 2 * * *    redis-cli FLUSHALL\n"
-            "db-backup       0 3 * * *     pg_dump --format=custom\n"
-            "report-mailer   0 6 * * 1     python send_weekly.py")
+    return "\n".join(["NAME              SCHEDULE      COMMAND"] + CRON + inc.scenario.cron)
 
 
 def c_restart(inc, a):
@@ -488,5 +407,6 @@ HANDLERS = {
     "metrics": c_metrics, "deploys": c_deploys, "config": c_config,
     "crontab": c_crontab, "restart": c_restart, "rollback": c_rollback,
     "scale": c_scale, "db": c_noop, "cache": c_noop, "disable": c_noop,
-    "flush": c_noop,
+    "flush": c_noop, "disk": c_noop, "cert": c_noop, "dns": c_noop,
+    "failover": c_noop, "queue": c_noop,
 }
