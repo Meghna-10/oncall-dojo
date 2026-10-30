@@ -359,6 +359,20 @@ $("endBtn").onclick = async () => {
 
     spark($("repChart"), (r.history || lastHistory).gateway.err, "#ff5468");
     $("reviewText").innerHTML = md(r.review);
+    const sh = r.shadow, q = sh.quality;
+    $("dqOverall").textContent = q.overall;
+    $("dqAxes").innerHTML = Object.entries(q.axes).map(([k, v]) => `
+      <div class="dq-axis"><div class="row"><span>${k[0].toUpperCase() + k.slice(1)}</span><b>${v}</b></div>
+        <div class="bar ${v >= 70 ? "good" : ""}"><i style="width:${v}%"></i></div></div>`).join("");
+    const MS = { first_look: "First look at the system", first_affected_log: "Logs of an affected service",
+      clue_found: "Found the real clue", status_update: "First status update", fix_applied: "Fix applied" };
+    $("replay").innerHTML = Object.entries(MS).map(([k, label]) => {
+      const you = sh.milestones[k], ex = sh.benchmark[k];
+      const d = you == null ? null : you - ex;
+      return `<tr><td>${label}</td><td>${you == null ? "never" : mmss(you)}</td><td>~${mmss(ex)}</td>
+        <td class="${you == null ? "late" : d > 0 ? "late" : "early"}">${you == null ? "missed" : d > 0 ? `+${d}s` : "on pace"}</td></tr>`;
+    }).join("");
+    $("shadowFb").innerHTML = md(sh.feedback);
     const rec = r.recovery;
     $("recovery").innerHTML = `
       <div class="rec-verdict ${rec.verified ? "yes" : "no"}">${rec.verified

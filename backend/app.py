@@ -5,6 +5,7 @@ import json
 import random
 import re
 import threading
+from concurrent.futures import ThreadPoolExecutor
 import time
 from pathlib import Path
 
@@ -184,9 +185,39 @@ def end(x_session: str = Header(...)):
                 f"in {sc['mttr']}s.\n\n## Root cause\n{inc.scenario.root_cause}\n\n"
                 "## What to improve\n" + ("\n".join(f"- {b[0]}" for b in sc["breakdown"]) or "- Nothing - clean run!")
                 + "\n\n_(offline mode: set NEBIUS_API_KEY for a full Nemotron Ultra review)_")
-    # Ultra reasons before it writes; 900 tokens cut reviews off mid-sentence
-    review = llm.chat("ultra", system, user, max_tokens=2500, fallback=fallback)
+    # AI Shadow Engineer: observed the run silently; reports decisions, not just the outcome
+    dec, dq = inc.decisions(), inc.decision_quality()
+    a, b = dec["actual"], dec["benchmark"]
+    shadow_sys = ("You are an expert SRE who silently shadowed a trainee through a simulated incident. Write 3 or 4 "
+                  "markdown bullet points of specific, kind, direct feedback about their DECISIONS: what they looked at "
+                  "first, which clue they reached late or ignored, risky actions, communication timing. Quote seconds "
+                  "(e.g. 'cost about 20 s'). Compare with the estimated expert path only as an estimate. Max 120 words. "
+                  "No headings.")
+    shadow_user = (f"Incident: {inc.scenario.title}. Root cause: {inc.scenario.root_cause}\n"
+                   f"Affected services: {dec['affected']}. Commands that reveal the real clue: {dec['clue_commands']}\n"
+                   f"Trainee milestones (seconds from page, null = never): {json.dumps(a)}\n"
+                   f"Estimated expert milestones: {json.dumps(b)}\n"
+                   f"Logs of unaffected services read: {dec['detours']}\nHarmful actions: {dec['harmful']}\n"
+                   f"Hints: {dec['hints']}, AI analyses: {dec['analyses']}, status updates: {dec['updates']}\n"
+                   f"Full command timeline:\n{timeline}")
+
+    def _late(k):
+        return a[k] - b[k] if a[k] is not None else None
+    shadow_fb = "\n".join(x for x in [
+        f"- You reached the real clue at {a['clue_found']} s; an experienced SRE typically gets there in ~{b['clue_found']} s."
+        if a["clue_found"] is not None else f"- You never ran the command that reveals the real clue ({', '.join(dec['clue_commands'])}).",
+        f"- You read logs of unaffected services first ({', '.join(dec['detours'])}), which cost time." if dec["detours"] else "",
+        f"- Risky action: {', '.join(dec['harmful'])} made things worse before it got better." if dec["harmful"] else "",
+        "- You never updated the team; post a short status update early." if a["status_update"] is None
+        else f"- First status update at {a['status_update']} s (late by ~{_late('status_update')} s)." if _late("status_update") > 0 else "",
+    ] if x)
+    # Ultra and Super run in parallel so the report isn't slower than before
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_review = pool.submit(llm.chat, "ultra", system, user, 2500, fallback)  # Ultra reasons first; 900 tokens cut it off
+        f_shadow = pool.submit(llm.chat, "super", shadow_sys, shadow_user, 500, shadow_fb)
+        review, shadow = f_review.result(), f_shadow.result()
     return {**sc, "review": review, "root_cause": inc.scenario.root_cause, "ai": llm.usage_report(),
+            "shadow": {"feedback": shadow, "milestones": a, "benchmark": b, "quality": dq},
             "title": inc.scenario.title, "commands": inc.commands,
             "harmful": inc.harmful_actions, "hints": inc.hints_used,
             "updates": inc.status_updates, "history": inc.history, "recovery": inc.recovery(),

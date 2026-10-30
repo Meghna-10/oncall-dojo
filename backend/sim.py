@@ -330,6 +330,60 @@ class Incident:
                         "p99_now": round(last["p99"])})
         return {"verified": ok and self.resolution == "full", "services": out}
 
+    # ---------- shadow engineer: decision milestones ----------
+    def _clue_cmds(self) -> set:
+        """Commands that surface this scenario's real clue (deploy, config, cron, or the key log)."""
+        sc, cmds = self.scenario, set()
+        if sc.deploy:
+            cmds |= {"deploys", f"deploys {sc.deploy[0]}"}
+        for svc in sc.config:
+            cmds.add(f"config diff {svc}")
+        if sc.cron or sc.id == "cache_stampede":
+            cmds.add("crontab")
+        if not cmds:                                   # incidents found only in logs (cert, dns, provider, ...)
+            cmds |= {f"logs {svc}" for svc, lvl, *_ in sc.logs if lvl == "ERROR"}
+        return cmds
+
+    def decisions(self) -> dict:
+        """Milestones of the trainee's run vs. an estimated expert path, plus the facts a reviewer needs."""
+        sc = self.scenario
+        affected = set(sc.effects) or {"payments"}
+        first = lambda pred: next((c["t"] for c in self.commands if pred(c["cmd"])), None)
+        clue = self._clue_cmds()
+        fix_t = round(self.resolved_at - self.started) if self.resolved_at else None
+        upd_t = next((m["t"] for m in self.chat if m["kind"] == "me"), None)
+        actual = {
+            "first_look": first(lambda c: c.split()[0] in ("status", "logs", "metrics", "grep")),
+            "first_affected_log": first(lambda c: c.split()[0] == "logs" and len(c.split()) > 1 and c.split()[1] in affected),
+            "clue_found": first(lambda c: c in clue),
+            "status_update": upd_t,
+            "fix_applied": fix_t,
+        }
+        # estimated expert path: status, logs of the worst service, the clue, an update, the fix (~8 s per step)
+        bench = {"first_look": 5, "first_affected_log": 12, "clue_found": 22, "status_update": 30, "fix_applied": 40}
+        wrong_logs = [c["cmd"] for c in self.commands if c["cmd"].startswith("logs ") and c["cmd"].split()[-1] not in affected]
+        return {"actual": actual, "benchmark": bench, "clue_commands": sorted(clue),
+                "affected": sorted(affected), "detours": wrong_logs[:5],
+                "harmful": [h["cmd"] for h in self.harmful_actions], "hints": self.hints_used,
+                "analyses": self.analyses_used, "updates": self.status_updates,
+                "partial_fix_used": any(c["cmd"] in sc.fixes and sc.fixes[c["cmd"]][0] == "partial" for c in self.commands)}
+
+    def decision_quality(self) -> dict:
+        """Judgement scored on four axes (0-100 each), separate from the speed-based drill score."""
+        d = self.decisions()
+        a = d["actual"]
+        inv = 100 if a["clue_found"] is not None else 30
+        if a["clue_found"] is not None and a["fix_applied"] is not None and a["clue_found"] > a["fix_applied"]:
+            inv = 50                                    # fixed first, understood later
+        inv -= min(30, 10 * len(d["detours"]))
+        safety = max(0, 100 - 35 * len(d["harmful"]) - (15 if d["partial_fix_used"] else 0))
+        comm = 0 if d["updates"] == 0 else 70 + min(30, 15 * (d["updates"] - 1))
+        if a["status_update"] is not None and a["status_update"] > 120:
+            comm -= 20
+        verify = 100 if self.resolution == "full" else 20
+        axes = {"investigation": max(0, inv), "safety": safety, "communication": max(0, comm), "verification": verify}
+        return {"axes": axes, "overall": round(sum(axes.values()) / 4)}
+
     def score(self) -> dict:
         mttr = self.elapsed
         s = 100

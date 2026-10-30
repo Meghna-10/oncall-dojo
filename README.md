@@ -41,6 +41,16 @@ your investigation instead of solving it. **Analyse my evidence** asks Nemotron 
 and the one command that would confirm or refute it. It never gives the fix, and each
 analysis costs 3 points (`GET /api/evidence`, `POST /api/hypotheses`).
 
+### AI Shadow Engineer + incident replay
+
+While you work, the simulator silently records decision milestones: first look at the
+system, first logs of an affected service, when you surfaced the real clue, your first
+status update, and the fix. The report shows them next to an **estimated** expert path,
+and Nemotron 3 Super (running in parallel with Ultra's review) writes specific feedback on
+your *decisions*, such as which detour cost you time. A separate **Decision Quality** score
+rates investigation, safety, communication and verification, so it judges how you
+reasoned, not only how fast you were.
+
 ### Verified recovery
 
 The report doesn't take "resolved" on trust. For every service it compares the worst

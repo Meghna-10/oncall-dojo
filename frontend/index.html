@@ -268,6 +268,20 @@
         <h3>Score breakdown</h3>
         <ul id="breakdown" class="breakdown"></ul>
       </div>
+      <div class="rep-card wide shadow-card">
+        <h3>AI Shadow Engineer · how you made decisions</h3>
+        <p class="muted">An expert SRE (Nemotron 3 Super) silently watched your run. Decision quality is scored separately from speed.</p>
+        <div class="dq">
+          <div class="dq-overall"><b id="dqOverall">–</b><span>Decision quality</span></div>
+          <div id="dqAxes" class="dq-axes"></div>
+        </div>
+        <div class="replay">
+          <h4>Incident replay: your run vs. an estimated expert path</h4>
+          <table class="replay-t"><thead><tr><th>Milestone</th><th>You</th><th>Expert (est.)</th><th></th></tr></thead>
+            <tbody id="replay"></tbody></table>
+        </div>
+        <div id="shadowFb" class="review-text"></div>
+      </div>
       <div class="rep-card wide">
         <h3>Verified recovery</h3>
         <div id="recovery" class="recovery"></div>
