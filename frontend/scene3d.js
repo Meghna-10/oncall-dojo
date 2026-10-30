@@ -25,20 +25,20 @@
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x070b16, 12, 26);
+    scene.fog = new THREE.Fog(0x0d0907, 12, 26);
     const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
     const base = new THREE.Vector3(0, 4.2, 11.5);
     camera.position.copy(base);
 
-    scene.add(new THREE.AmbientLight(0x8090c0, 0.55));
-    const key = new THREE.PointLight(0xa3e635, 1.1, 30); key.position.set(-4, 7, 6); scene.add(key);
-    const rim = new THREE.PointLight(0x6366f1, 1.4, 30); rim.position.set(5, 4, -5); scene.add(rim);
+    scene.add(new THREE.AmbientLight(0xb09070, 0.55));
+    const key = new THREE.PointLight(0xe3c48d, 1.1, 30); key.position.set(-4, 7, 6); scene.add(key);
+    const rim = new THREE.PointLight(0xc2621d, 1.4, 30); rim.position.set(5, 4, -5); scene.add(rim);
 
-    const grid = new THREE.GridHelper(30, 30, 0x2a3a66, 0x16213d);
+    const grid = new THREE.GridHelper(30, 30, 0x4a3426, 0x221812);
     grid.position.y = -1.6; grid.material.transparent = true; grid.material.opacity = .55; scene.add(grid);
 
-    const GREEN = 0x22c55e, LIME = 0xa3e635, RED = 0xf43f5e, glow = glowTexture(THREE);
-    const metal = new THREE.MeshStandardMaterial({ color: 0x1a2440, metalness: .7, roughness: .35 });
+    const GREEN = 0x22c55e, LIME = 0xe3c48d, RED = 0xf43f5e, glow = glowTexture(THREE);
+    const metal = new THREE.MeshStandardMaterial({ color: 0x2a1f18, metalness: .7, roughness: .35 });
     const nodes = {}, pulses = [];
 
     function halo(color, size, parent) {
@@ -58,7 +58,7 @@
       return g;
     }
     function database(name, x, y, z, color) {
-      const g = new THREE.Group(), mat = new THREE.MeshStandardMaterial({ color: 0x1b2747, metalness: .6, roughness: .3,
+      const g = new THREE.Group(), mat = new THREE.MeshStandardMaterial({ color: 0x2a1f18, metalness: .6, roughness: .3,
         emissive: color, emissiveIntensity: .35 });
       for (let i = 0; i < 3; i++) {
         const c = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.32, 40), mat);
@@ -74,7 +74,7 @@
     // gateway: a glowing core inside a slowly turning ring
     const gw = new THREE.Group();
     gw.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1),
-      new THREE.MeshStandardMaterial({ color: 0x1b2747, emissive: LIME, emissiveIntensity: .6, metalness: .5, roughness: .3, flatShading: true })));
+      new THREE.MeshStandardMaterial({ color: 0x2a1f18, emissive: LIME, emissiveIntensity: .6, metalness: .5, roughness: .3, flatShading: true })));
     const ringG = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.04, 8, 64), new THREE.MeshBasicMaterial({ color: LIME }));
     ringG.rotation.x = Math.PI / 2.4; gw.add(ringG);
     halo(LIME, 3.4, gw);
@@ -94,13 +94,13 @@
     const particleGeo = new THREE.SphereGeometry(0.06, 8, 8);
     edges.forEach(([a, b]) => {
       const bad = b === "db";
-      const color = bad ? RED : 0x60a5fa;
+      const color = bad ? RED : 0xd9a25a;
       const pts = [anchor(a), anchor(b)];
       const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
         new THREE.LineBasicMaterial({ color, transparent: true, opacity: bad ? .55 : .3 }));
       scene.add(line);
       for (let i = 0; i < (bad ? 2 : 3); i++) {
-        const p = new THREE.Mesh(particleGeo, new THREE.MeshBasicMaterial({ color: bad ? RED : 0xbef264 }));
+        const p = new THREE.Mesh(particleGeo, new THREE.MeshBasicMaterial({ color: bad ? RED : 0xf3e1b9 }));
         const h = halo(bad ? RED : LIME, .5, p); h.material.opacity = .8;
         scene.add(p);
         pulses.push({ p, a: pts[0], b: pts[1], t: i / 3, speed: bad ? .12 : .35 + Math.random() * .15 });
@@ -111,7 +111,7 @@
     const dust = new THREE.BufferGeometry(), N = 260, arr = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) { arr[i * 3] = (Math.random() - .5) * 18; arr[i * 3 + 1] = Math.random() * 7 - 1.5; arr[i * 3 + 2] = (Math.random() - .5) * 12; }
     dust.setAttribute("position", new THREE.BufferAttribute(arr, 3));
-    const dustPts = new THREE.Points(dust, new THREE.PointsMaterial({ color: 0x8aa0d8, size: .035, transparent: true, opacity: .6 }));
+    const dustPts = new THREE.Points(dust, new THREE.PointsMaterial({ color: 0xc9a77a, size: .035, transparent: true, opacity: .6 }));
     scene.add(dustPts);
 
     function resize() {

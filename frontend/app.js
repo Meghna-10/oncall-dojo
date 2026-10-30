@@ -158,7 +158,7 @@ async function refresh() {
     $(svc + "-p99").textContent = last("p99") + "ms";
     $(svc + "-res").textContent = `${last("cpu")}% / ${last("mem")}%`;
     spark($(svc + "-cErr"), h.err, b ? "#ff5468" : "#3ddc84");
-    spark($(svc + "-cP99"), h.p99, "#60a5fa");
+    spark($(svc + "-cP99"), h.p99, "#e3c48d");
   }
   const g = s.history.gateway, gl = (k) => g[k][g[k].length - 1];
   $("kErr").textContent = gl("err") + "%";
