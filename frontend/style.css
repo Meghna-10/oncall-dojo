@@ -406,3 +406,133 @@ button.big { border-radius: 10px; padding: 12px 20px; font-size: 15px; }
 .coach { background: linear-gradient(160deg, rgba(227, 196, 141, .12), rgba(194, 98, 29, .04)); border-color: rgba(227, 196, 141, .28); }
 .coach-btn { color: #1a1009; }
 .foot { border-top-color: rgba(244, 237, 228, .06); }
+/* ================= INCIDENT COMMAND CENTER (scenario library) ================= */
+.cc-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+.cc-head h2 { font-size: 40px; margin: 2px 0 6px; }
+.live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-right: 6px;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, .6); animation: ping 1.8s infinite; vertical-align: middle; }
+.cc-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; margin: 26px 0 22px; border-radius: 14px; overflow: hidden;
+  background: rgba(244, 237, 228, .07); border: 1px solid rgba(244, 237, 228, .07); }
+.cc-stat { background: var(--panel); padding: 16px 18px; }
+.cc-stat small { display: block; color: var(--muted); font-size: 12px; }
+.cc-stat b { font: 600 30px var(--mono); letter-spacing: -1px; }
+.cc-stat.easy b { color: var(--green); } .cc-stat.medium b { color: var(--amber); } .cc-stat.hard b { color: var(--red); }
+
+/* featured incident */
+.featured { display: grid; grid-template-columns: 1.1fr 1fr; gap: 0; border-radius: 18px; overflow: hidden; margin-bottom: 26px;
+  border: 1px solid rgba(227, 196, 141, .16); background: radial-gradient(700px 360px at 20% 60%, rgba(194, 98, 29, .18), transparent 70%), var(--panel);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .45); }
+.feat-art { position: relative; min-height: 300px; display: grid; place-items: center; perspective: 900px; overflow: hidden;
+  background: repeating-linear-gradient(90deg, rgba(244, 237, 228, .035) 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(0deg, rgba(244, 237, 228, .035) 0 1px, transparent 1px 40px); }
+.feat-copy { padding: 34px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.feat-copy h3 { font-size: 28px; margin: 4px 0; letter-spacing: -.5px; }
+.feat-copy p { color: var(--muted); margin: 0 0 6px; font-size: 16px; }
+.feat-tags { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.sevtag { font: 700 11px var(--mono); letter-spacing: 1px; color: var(--red); background: rgba(244, 63, 94, .12);
+  border: 1px solid rgba(244, 63, 94, .3); padding: 4px 10px; border-radius: 99px; }
+.feat-meta { display: flex; gap: 14px; align-items: center; color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+.feat-copy .primary { align-self: flex-start; }
+
+/* isometric racks (shared by featured art and infra cards) */
+.iso { position: relative; transform: rotateX(58deg) rotateZ(-40deg); transform-style: preserve-3d; display: flex; gap: 38px;
+  animation: isoFloat 6s ease-in-out infinite; }
+@keyframes isoFloat { 50% { transform: rotateX(58deg) rotateZ(-40deg) translateZ(12px); } }
+.box { --w: 64px; --d: 64px; --h: 130px; position: relative; width: var(--w); height: var(--d); transform-style: preserve-3d; }
+.box .f { position: absolute; display: block; }
+.box .top { inset: 0; background: linear-gradient(135deg, #3a2c22, #241a14); transform: translateZ(var(--h)); border: 1px solid rgba(227, 196, 141, .25); }
+.box .front { left: 0; bottom: 0; width: var(--w); height: var(--h); transform-origin: bottom; transform: rotateX(-90deg);
+  background: linear-gradient(180deg, #2a1f18, #17110d); border: 1px solid rgba(227, 196, 141, .18);
+  display: flex; flex-direction: column; justify-content: space-evenly; padding: 0 8px; }
+.box .side { right: 0; bottom: 0; width: var(--d); height: var(--h); transform-origin: bottom right;
+  transform: rotateX(-90deg) rotateY(-90deg); background: #120d0a; border: 1px solid rgba(227, 196, 141, .1); }
+.box .front b { display: block; height: 3px; border-radius: 2px; background: var(--green); box-shadow: 0 0 8px var(--green); animation: led 2.4s infinite; }
+.box .front b:nth-child(2n) { animation-delay: .6s; } .box .front b:nth-child(3n) { animation-delay: 1.1s; }
+@keyframes led { 50% { opacity: .35; } }
+.iso .r1 .front b { background: var(--red); box-shadow: 0 0 10px var(--red); animation-duration: .8s; }
+.iso .r1 .top { border-color: rgba(244, 63, 94, .6); box-shadow: 0 0 40px rgba(244, 63, 94, .35); }
+.beacon { position: absolute; left: 50%; top: 50%; width: 220px; height: 220px; margin: -110px 0 0 -110px; border-radius: 50%;
+  transform: translateZ(1px); border: 1px solid rgba(244, 63, 94, .35); animation: sonar 2.4s ease-out infinite; pointer-events: none; }
+@keyframes sonar { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+
+/* scenario cards */
+.cards { grid-auto-rows: 1fr; }
+#cards .card { padding: 0; display: flex; flex-direction: column; overflow: hidden; animation: cardIn .5s both ease-out;
+  --c: var(--amber); }
+#cards .card[data-diff="easy"] { --c: var(--green); }
+#cards .card[data-diff="hard"] { --c: var(--red); }
+@keyframes cardIn { from { opacity: 0; transform: translateY(14px); } }
+#cards .card:focus-visible { outline: 2px solid var(--nv); outline-offset: 3px; }
+.vis { position: relative; height: 128px; display: grid; place-items: center; perspective: 600px; overflow: hidden;
+  background: radial-gradient(160px 90px at 50% 70%, color-mix(in srgb, var(--c) 18%, transparent), transparent 70%),
+    linear-gradient(180deg, rgba(255, 245, 230, .03), transparent); border-bottom: 1px solid rgba(244, 237, 228, .06); }
+.sev { position: absolute; top: 10px; right: 10px; font: 700 10px var(--mono); letter-spacing: 1px; color: var(--c);
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); padding: 2px 7px; border-radius: 99px; }
+.card-body { padding: 16px 18px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.card-body .cat { font-size: 12px; color: var(--muted); }
+.card-body .t { font-weight: 700; font-size: 16px; margin: 0; }
+.card-body .d { color: var(--muted); font-size: 13.5px; flex: 1; }
+.card-body .meta { margin-top: 8px; }
+.card-body .dur { color: var(--muted); }
+.v { transform-style: preserve-3d; transition: transform .3s; }
+.card:hover .v { transform: translateZ(26px) scale(1.06); }
+
+/* database: floating stacked discs */
+.v-db { display: grid; gap: 0; animation: bob 4s ease-in-out infinite; }
+.v-db .disc { display: block; width: 74px; height: 22px; border-radius: 50%; margin-top: -6px;
+  background: radial-gradient(ellipse at 50% 30%, #4a3729, #1d1611); border: 1px solid color-mix(in srgb, var(--c) 70%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--c) 35%, transparent), inset 0 -4px 8px rgba(0, 0, 0, .5); }
+/* api: core + orbit */
+.v-api { position: relative; width: 90px; height: 90px; display: grid; place-items: center; }
+.v-api .core { width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f6e7c6, var(--c));
+  box-shadow: 0 0 24px var(--c); }
+.v-api .orbit { position: absolute; inset: 6px; border-radius: 50%; border: 1px dashed color-mix(in srgb, var(--nv) 55%, transparent);
+  transform: rotateX(65deg); animation: spinO 6s linear infinite; }
+.v-api .orbit b { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--nv2); box-shadow: 0 0 10px var(--nv); }
+.v-api .orbit b:nth-child(1) { top: -4px; left: 50%; } .v-api .orbit b:nth-child(2) { bottom: 10px; left: 4px; } .v-api .orbit b:nth-child(3) { bottom: 10px; right: 4px; }
+@keyframes spinO { to { transform: rotateX(65deg) rotateZ(360deg); } }
+/* infra: one isometric rack */
+.v-rack { transform: rotateX(58deg) rotateZ(-40deg) scale(.62); animation: none; }
+.v-rack .box { --h: 110px; --w: 56px; --d: 56px; }
+.v-rack .front b { background: var(--c); box-shadow: 0 0 8px var(--c); }
+.card:hover .v-rack { transform: rotateX(58deg) rotateZ(-40deg) scale(.7) translateZ(14px); }
+/* network & security: nodes + shield */
+.v-net svg { width: 130px; height: 96px; overflow: visible; }
+.v-net .link { fill: none; stroke: color-mix(in srgb, var(--nv) 60%, transparent); stroke-width: 1.5; stroke-dasharray: 4 4; animation: dash 1.6s linear infinite; }
+.v-net circle { fill: var(--nv2); filter: drop-shadow(0 0 4px var(--nv)); }
+.v-net .shield { fill: color-mix(in srgb, var(--c) 22%, transparent); stroke: var(--c); stroke-width: 1.5; filter: drop-shadow(0 0 8px var(--c)); }
+@keyframes dash { to { stroke-dashoffset: -16; } }
+/* payments: terminal + card */
+.v-pay { position: relative; width: 120px; height: 90px; }
+.v-pay .term { position: absolute; left: 22px; top: 6px; width: 54px; height: 80px; border-radius: 9px; transform: rotateY(-22deg) rotateX(12deg);
+  background: linear-gradient(160deg, #3a2c22, #1a130e); border: 1px solid rgba(227, 196, 141, .3); box-shadow: 10px 14px 24px rgba(0, 0, 0, .5); }
+.v-pay .screen { position: absolute; left: 7px; right: 7px; top: 8px; height: 22px; border-radius: 4px;
+  background: color-mix(in srgb, var(--c) 35%, #120d0a); box-shadow: 0 0 12px color-mix(in srgb, var(--c) 50%, transparent); }
+.v-pay .keys { position: absolute; left: 9px; right: 9px; bottom: 9px; height: 34px;
+  background: radial-gradient(circle, rgba(244, 237, 228, .35) 1.5px, transparent 2px) 0 0 / 12px 11px; }
+.v-pay .cardchip { position: absolute; right: 8px; bottom: 6px; width: 54px; height: 34px; border-radius: 6px; transform: rotate(-14deg) translateZ(20px);
+  background: linear-gradient(135deg, var(--nv2), #c2621d); box-shadow: 0 8px 20px rgba(0, 0, 0, .5); animation: swipe 3.2s ease-in-out infinite; }
+.v-pay .cardchip i { position: absolute; left: 8px; top: 9px; width: 12px; height: 9px; border-radius: 2px; background: rgba(26, 16, 9, .55); }
+@keyframes swipe { 50% { transform: rotate(-8deg) translate(-8px, -4px) translateZ(20px); } }
+@keyframes bob { 50% { transform: translateY(-6px); } }
+
+@media (max-width: 1200px) {
+  .cc-stats { grid-template-columns: repeat(3, 1fr); }
+  .featured { grid-template-columns: 1fr; }
+  .feat-art { min-height: 240px; }
+}
+@media (max-width: 720px) {
+  .cc-head h2 { font-size: 30px; }
+  .cc-stats { grid-template-columns: repeat(2, 1fr); }
+  .feat-copy { padding: 22px; }
+  .iso { gap: 22px; } .iso .box { --w: 44px; --d: 44px; --h: 96px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .iso, .v-db, .v-api .orbit, .v-net .link, .v-pay .cardchip, .beacon, .box .front b, .live-dot { animation: none !important; }
+  #cards .card { animation: none; }
+}
+
+.feat-art .iso { margin-top: 150px; }
+.card-body .cat { text-align: left; }
+@media (max-width: 720px) { .feat-art .iso { margin-top: 110px; } }
+.v-rack { margin-top: 96px; }

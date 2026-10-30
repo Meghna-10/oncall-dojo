@@ -62,23 +62,34 @@
     </ol>
   </section>
 
-  <section id="scenarios" class="section">
-    <div class="lib-head">
+  <section id="scenarios" class="section cc">
+    <div class="cc-head">
       <div>
-        <div class="eyebrow">Incident library</div>
-        <h2>Pick an outage to practise</h2>
-        <p class="muted">Real-world failure types. The root cause stays hidden until your review.</p>
+        <div class="eyebrow"><span class="live-dot"></span> Incident command center</div>
+        <h2>Incident Scenario Library</h2>
+        <p class="muted">Train for the failures that happen in real production systems.</p>
       </div>
-      <button id="randomBtn2" class="ghost">🎲 Random incident</button>
+      <button id="randomBtn2" class="primary big">🎲 Start random incident</button>
     </div>
+
+    <div class="cc-stats">
+      <div class="cc-stat"><small>Simulations available</small><b data-count="total">0</b></div>
+      <div class="cc-stat"><small>Categories</small><b data-count="cats">0</b></div>
+      <div class="cc-stat easy"><small>Easy</small><b data-count="easy">0</b></div>
+      <div class="cc-stat medium"><small>Medium</small><b data-count="medium">0</b></div>
+      <div class="cc-stat hard"><small>Hard</small><b data-count="hard">0</b></div>
+    </div>
+
+    <div id="featured" class="featured"></div>
+
     <div id="tabs" class="tabs"></div>
     <div class="filters">
-      <input id="search" type="search" placeholder="Search by symptom… e.g. slow, payment, logged out, crashing">
-      <select id="fDiff">
+      <input id="search" type="search" placeholder="Search by symptom… e.g. slow, payment, logged out, crashing" aria-label="Search scenarios">
+      <select id="fDiff" aria-label="Difficulty">
         <option value="">All difficulties</option><option value="easy">Easy</option>
         <option value="medium">Medium</option><option value="hard">Hard</option>
       </select>
-      <select id="fDur">
+      <select id="fDur" aria-label="Duration">
         <option value="">Any duration</option><option value="5">~5 min</option>
         <option value="10">~10 min</option><option value="15">~15 min</option>
       </select>

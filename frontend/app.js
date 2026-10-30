@@ -46,23 +46,87 @@ async function loadScenarios() {
     document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("on", x === b));
     renderCards();
   }));
-  renderCards();
+  renderCards(); renderFeatured();
+  const stats = document.querySelector(".cc-stats");
+  if ("IntersectionObserver" in window) {
+    const o = new IntersectionObserver((es) => { if (es[0].isIntersecting) { countUp(); o.disconnect(); } });
+    o.observe(stats);
+  } else countUp();
 }
+// Category illustrations: lightweight CSS-3D / SVG, no WebGL per card.
+const VISUALS = {
+  "Database": `<div class="v v-db"><i class="disc"></i><i class="disc"></i><i class="disc"></i></div>`,
+  "API & Application": `<div class="v v-api"><i class="core"></i><i class="orbit"><b></b><b></b><b></b></i></div>`,
+  "Infrastructure & Cloud": `<div class="v v-rack"><div class="box"><i class="f front"><b></b><b></b><b></b><b></b></i><i class="f side"></i><i class="f top"></i></div></div>`,
+  "Network & Security": `<div class="v v-net"><svg viewBox="0 0 120 90" aria-hidden="true">
+      <path class="link" d="M20 70 L60 20 L100 70 L20 70 M60 20 L60 55"/>
+      <path class="shield" d="M60 32 l16 6 v12 c0 10-7 16-16 20 c-9-4-16-10-16-20 v-12z"/>
+      <circle cx="20" cy="70" r="5"/><circle cx="60" cy="20" r="5"/><circle cx="100" cy="70" r="5"/></svg></div>`,
+  "Payments & Microservices": `<div class="v v-pay"><div class="term"><i class="screen"></i><i class="keys"></i></div><div class="cardchip"><i></i></div></div>`,
+};
+const SEV = { hard: "SEV-1", medium: "SEV-2", easy: "SEV-3" };
+
+function cardHTML(s, i) {
+  return `<article class="card" tabindex="0" role="button" data-id="${s.id}" data-diff="${s.difficulty}"
+      aria-label="Start drill: ${esc(s.title)}" style="animation-delay:${Math.min(i, 12) * 40}ms">
+    <div class="vis">${VISUALS[s.category] || ""}<span class="sev">${SEV[s.difficulty]}</span></div>
+    <div class="card-body">
+      <span class="cat">${s.icon} ${esc(s.category)}</span>
+      <div class="t">${esc(s.title)}</div>
+      <div class="d">${esc(s.description)}</div>
+      <div class="meta"><span class="diff ${s.difficulty}">${s.difficulty}</span><span class="dur">⏱ ~${s.duration} min</span>
+        <span class="go">Start drill →</span></div>
+    </div>
+  </article>`;
+}
+
+function renderFeatured() {
+  const hard = library.filter((s) => s.difficulty === "hard");
+  const day = Math.floor(Date.now() / 864e5);
+  const f = hard[day % hard.length] || library[0];            // a different hard incident each day
+  $("featured").innerHTML = `
+    <div class="feat-art" aria-hidden="true">
+      <div class="iso">${[0, 1, 2].map((k) => `<div class="box r${k}"><i class="f front"><b></b><b></b><b></b><b></b><b></b></i><i class="f side"></i><i class="f top"></i></div>`).join("")}
+        <div class="beacon"></div></div>
+    </div>
+    <div class="feat-copy">
+      <div class="feat-tags"><span class="sevtag">${SEV[f.difficulty]} · CRITICAL</span><span class="muted">Featured incident · ${esc(f.category)}</span></div>
+      <h3>${f.icon} ${esc(f.title)}</h3>
+      <p>${esc(f.description)}</p>
+      <div class="feat-meta"><span class="diff ${f.difficulty}">${f.difficulty}</span><span>⏱ ~${f.duration} min</span></div>
+      <button class="primary big" data-feat="${f.id}">Start simulation →</button>
+    </div>`;
+  $("featured").querySelector("[data-feat]").onclick = () => start(f.id);
+}
+
+function countUp() {
+  const n = { total: library.length, cats: new Set(library.map((s) => s.category)).size };
+  ["easy", "medium", "hard"].forEach((d) => (n[d] = library.filter((s) => s.difficulty === d).length));
+  document.querySelectorAll("[data-count]").forEach((el) => {
+    const target = n[el.dataset.count];
+    if (calm) { el.textContent = target; return; }
+    const t0 = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / 900);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+}
+
 function renderCards() {
   const q = $("search").value.trim().toLowerCase(), d = $("fDiff").value, dur = $("fDur").value;
   const shown = library.filter((s) => (tab === "All" || s.category === tab) && (!d || s.difficulty === d)
     && (!dur || String(s.duration) === dur)
     && (!q || (s.title + " " + s.description + " " + s.category).toLowerCase().includes(q)));
   $("count").textContent = `${shown.length} of ${library.length} incidents`;
-  $("cards").innerHTML = shown.length ? shown.map((s) => `
-    <div class="card" data-id="${s.id}">
-      <div class="card-top"><span class="ic">${s.icon}</span><span class="cat">${esc(s.category)}</span></div>
-      <div class="t">${esc(s.title)}</div>
-      <div class="d">${esc(s.description)}</div>
-      <div class="meta"><span class="diff ${s.difficulty}">${s.difficulty}</span><span>⏱ ~${s.duration} min</span>
-        <span class="go">Start drill →</span></div>
-    </div>`).join("") : `<p class="muted">No incidents match these filters.</p>`;
-  document.querySelectorAll(".card").forEach((c) => { c.onclick = () => start(c.dataset.id); tilt(c, 10); });
+  $("cards").innerHTML = shown.length ? shown.map(cardHTML).join("") : `<p class="muted">No incidents match these filters.</p>`;
+  document.querySelectorAll("#cards .card").forEach((c) => {
+    c.onclick = () => start(c.dataset.id);
+    c.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); start(c.dataset.id); } };
+    tilt(c, 9);
+  });
 }
 ["search", "fDiff", "fDur"].forEach((id) => $(id).addEventListener("input", renderCards));
 $("randomBtn").onclick = () => start(null);
