@@ -16,6 +16,12 @@
     <h1>A flight simulator for production outages.</h1>
     <p class="sub">Practise your first 3&nbsp;a.m. incident before it happens for real. An AI breaks a live system,
       stressed colleagues ping you, a coach nudges you, and Nemotron writes your post-incident review.</p>
+    <div class="how">
+      <div><b>1. Get paged</b>A practice website breaks. Nothing real can be harmed.</div>
+      <div><b>2. Find the cause</b>Use the guide and command buttons. No experience needed.</div>
+      <div><b>3. Fix it and get graded</b>See your score and what to improve.</div>
+    </div>
+    <h2 class="pick">Choose an outage to practise</h2>
     <div id="cards" class="cards"></div>
     <button id="randomBtn" class="primary">🎲 Start a surprise incident</button>
     <div class="powered">Powered by NVIDIA Nemotron Nano · Super · Ultra on Nebius Token Factory</div>
@@ -49,7 +55,18 @@
     <div class="dash" id="dash"></div>
 
     <div class="term">
-      <div class="term-head">prod-bastion-01 <span>type <b>help</b> to start</span></div>
+      <div class="mission">
+        <div id="missionSteps" class="steps"></div>
+        <div id="missionText" class="mission-text"></div>
+        <div class="quick">
+          <button data-cmd="status">Check all services</button>
+          <button data-cmd="logs db">Database logs</button>
+          <button data-cmd="deploys">Recent deploys</button>
+          <button data-cmd="config diff gateway">Config changes</button>
+          <button data-cmd="crontab">Scheduled jobs</button>
+          <button data-cmd="help">All commands</button>
+        </div>
+      </div>
       <div id="termOut" class="term-out"></div>
       <div class="term-in"><span class="ps">oncall@prod:~$</span><input id="termIn" autocomplete="off" spellcheck="false"></div>
     </div>

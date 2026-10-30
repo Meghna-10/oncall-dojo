@@ -33,6 +33,19 @@ button.danger { background: var(--red); color: #fff; border: 0; font-weight: 700
 .diff.easy { color: var(--green); } .diff.medium { color: var(--amber); } .diff.hard { color: var(--red); }
 .powered { margin-top: 28px; color: var(--muted); font-size: 12px; }
 
+.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; text-align: left; color: var(--muted); }
+.how div { padding: 14px 16px; border-left: 2px solid var(--nv); background: rgba(255, 255, 255, .03); border-radius: 0 10px 10px 0; }
+.how b { display: block; color: var(--text); margin-bottom: 4px; }
+.pick { font-size: 18px; margin: 0 0 12px; text-align: left; }
+.mission { padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.steps { display: flex; flex-wrap: wrap; gap: 6px; }
+.step { font-size: 12px; padding: 3px 10px; border-radius: 99px; color: var(--muted); background: var(--panel2); }
+.step.now { color: #0b0e14; background: var(--amber); font-weight: 700; }
+.step.done { color: var(--green); }
+.mission-text { margin: 8px 0; font-size: 15px; font-weight: 600; }
+.quick { display: flex; flex-wrap: wrap; gap: 6px; }
+.quick button { padding: 5px 10px; font-size: 12px; }
+
 /* pager */
 #pager { position: fixed; inset: 0; display: grid; place-items: center; z-index: 20;
   background: rgba(40, 0, 6, .85); animation: flash 1s infinite; }
@@ -125,4 +138,5 @@ button.danger { background: var(--red); color: #fff; border: 0; font-weight: 700
   .inc-title { flex-basis: 100%; order: 5; }
   .bar button { padding: 6px 10px; }
   .hero h1 { font-size: 32px; }
+  .how { grid-template-columns: 1fr; }
 }

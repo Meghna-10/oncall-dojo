@@ -57,7 +57,7 @@ function beep() {
 // ---------- incident ----------
 async function start(id) {
   const s = await api("incident", { scenario: id });
-  seenChat = 0; ended = false;
+  seenChat = 0; ended = false; mission = {}; renderMission();
   $("termOut").innerHTML = ""; $("chatLog").innerHTML = "";
   $("landing").classList.add("hidden"); $("review").classList.add("hidden");
   $("pagerText").textContent = s.scenario.page;
@@ -106,6 +106,7 @@ async function refresh() {
   try { s = await api("state"); } catch (e) { return; }
   $("timer").textContent = mmss(s.elapsed);
   const pill = $("statusPill");
+  if (s.resolved && !mission.fix) { mission.fix = true; renderMission(); }
   if (s.resolved) { pill.className = "pill ok"; pill.textContent = "RESOLVED"; }
   else if (s.healthy) { pill.className = "pill partial"; pill.textContent = "MITIGATED?"; }
   else { pill.className = "pill crit"; pill.textContent = "CRITICAL"; }
@@ -148,19 +149,45 @@ $("termIn").addEventListener("keydown", async (e) => {
   if (e.key === "ArrowDown") { hIdx = Math.min(history.length, hIdx + 1); e.target.value = history[hIdx] || ""; return; }
   if (e.key !== "Enter") return;
   const cmd = e.target.value.trim(); e.target.value = "";
-  if (!cmd) return;
+  if (cmd) runCmd(cmd);
+});
+
+async function runCmd(cmd) {
   history.push(cmd); hIdx = history.length;
   if (cmd === "clear") { $("termOut").innerHTML = ""; return; }
   term("oncall@prod:~$ " + cmd, "cmd");
   const r = await api("cmd", { cmd });
   term(r.output, r.output.includes("!!") || r.output.startsWith("dojo:") ? "err" : "");
+  const head = cmd.split(" ")[0];
+  if (head === "status") mission.look = true;
+  if (["logs", "grep", "metrics"].includes(head)) mission.logs = true;
+  if (["deploys", "config", "crontab"].includes(head)) mission.change = true;
+  renderMission();
   refresh();
-});
+}
+
+document.querySelectorAll(".quick button").forEach((b) => (b.onclick = () => runCmd(b.dataset.cmd)));
+
+// ---------- mission guide ----------
+const STEPS = [
+  ["look", "See what's broken", "Click Check all services. DEGRADED means that service has a problem."],
+  ["logs", "Read the logs", "Open the logs of a red service and look for repeated WARN or ERROR lines."],
+  ["change", "Find what changed", "Outages often follow a change. Check recent deploys, config changes and scheduled jobs."],
+  ["team", "Update your team", "Type a short status update in the war room on the right."],
+  ["fix", "Fix the cause", "Type the fix in the terminal, like rollback <service>. Use Hint if you're stuck."],
+];
+let mission = {};
+function renderMission() {
+  const next = STEPS.find(([k]) => !mission[k]);
+  $("missionSteps").innerHTML = STEPS.map(([k, name], i) =>
+    `<span class="step ${mission[k] ? "done" : next && next[0] === k ? "now" : ""}">${mission[k] ? "✓" : i + 1} ${name}</span>`).join("");
+  $("missionText").textContent = next ? "Next: " + next[2] : "Fixed! Click End & review to see your score.";
+}
 
 $("chatForm").onsubmit = async (e) => {
   e.preventDefault();
   const text = $("chatIn").value.trim(); $("chatIn").value = "";
-  if (text) { await api("chat", { text }); refresh(); }
+  if (text) { await api("chat", { text }); mission.team = true; renderMission(); refresh(); }
 };
 
 $("hintBtn").onclick = async () => {
