@@ -294,4 +294,24 @@ $("endBtn").onclick = async () => {
 
 $("againBtn").onclick = () => { show("landing"); window.scrollTo(0, 0); };
 
-loadScenarios();
+// ---------- 3D motion (skipped when the user prefers reduced motion) ----------
+const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function tilt(el, max) {
+  if (calm || !el) return;
+  el.addEventListener("mousemove", (e) => {
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+    el.style.transform = `rotateY(${x * max}deg) rotateX(${-y * max}deg) translateZ(0)`;
+  });
+  el.addEventListener("mouseleave", () => (el.style.transform = ""));
+}
+tilt(document.querySelector(".preview"), 14);
+const io = "IntersectionObserver" in window
+  ? new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("in")), { threshold: 0.12 })
+  : null;
+document.querySelectorAll("#landing .section").forEach((s) => {
+  if (calm || !io) return;
+  s.classList.add("reveal"); io.observe(s);
+});
+
+loadScenarios().then(() => document.querySelectorAll(".card").forEach((c) => tilt(c, 10)));
