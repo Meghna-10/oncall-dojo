@@ -536,3 +536,23 @@ button.big { border-radius: 10px; padding: 12px 20px; font-size: 15px; }
 .card-body .cat { text-align: left; }
 @media (max-width: 720px) { .feat-art .iso { margin-top: 110px; } }
 .v-rack { margin-top: 96px; }
+
+/* ================= taste-skill review fixes ================= */
+/* 1. hero must stack on tablet/phone (the v2 rule overrode the earlier breakpoint) */
+@media (max-width: 1100px) {
+  .hero { grid-template-columns: 1fr; gap: 36px; min-height: 0; }
+  .scene { height: 460px; }
+  .hero h1 { font-size: 56px; }
+}
+@media (max-width: 720px) {
+  .hero h1 { font-size: 40px; }
+  .scene { height: 360px; }
+}
+/* 2. never hide content behind a scroll trigger: reveal is a slide only */
+.reveal { opacity: 1; transform: translateY(24px); }
+.reveal.in { transform: none; }
+/* 3. readable body text (16px) */
+.card-body .d, .steps4 p, .model p, .pred p, .radar-copy p, .feat-copy p, .how div { font-size: 16px; }
+.cc-head p, .lib-head p { font-size: 17px; }
+/* 4. footer text inside the page margin */
+.foot { padding-left: 16px; padding-right: 16px; }
