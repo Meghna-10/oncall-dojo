@@ -556,3 +556,106 @@ button.big { border-radius: 10px; padding: 12px 20px; font-size: 15px; }
 .cc-head p, .lib-head p { font-size: 17px; }
 /* 4. footer text inside the page margin */
 .foot { padding-left: 16px; padding-right: 16px; }
+/* ================= CLEAN PASS: decisions instead of decoration ================= */
+:root { --muted: #b5a798; --s1: #17110d; --s2: #1f1813; --s3: #2a211a; }
+html, body { font-family: "Geist", "Inter", system-ui, sans-serif; }
+:root { --mono: "Geist Mono", ui-monospace, Consolas, monospace; }
+body { font-size: 16px; letter-spacing: -.005em; }
+
+/* flat ground: no glows, no blur, no shadows at rest on the landing page */
+#landing { background: var(--bg) !important; }
+.bg3d { display: none; }
+#landing *:not(canvas) { box-shadow: none !important; text-shadow: none !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.nav { position: sticky; background: var(--bg); border-bottom: 0; padding-top: 18px; padding-bottom: 18px; }
+.nav .logo { font-size: 20px; font-weight: 700; letter-spacing: -.03em; }
+.logo span { color: var(--nv); }
+
+/* buttons: flat, one fill, fully round */
+button, button.big { border-radius: 999px; }
+button.primary, .coach-btn { background: var(--nv) !important; color: #1a1009; filter: none !important; }
+button.primary:hover, .coach-btn:hover { background: var(--nv2) !important; }
+button.ghost, .chip, .tab, .quick button { background: var(--s2); border-color: transparent; }
+button.ghost:hover, .chip:hover, .tab:hover { background: var(--s3); }
+.tab.on { background: var(--text); color: #1a1009; }
+
+/* type: five sizes. display / heading / lead / body / small */
+.hero h1, .section h2, .cc-head h2, .feat-copy h3, .hero h1 em {
+  background: none !important; -webkit-background-clip: border-box !important; background-clip: border-box !important;
+  color: var(--text) !important; }
+.hero { grid-template-columns: 1.15fr 1fr; padding-top: 72px; padding-bottom: 40px; align-items: center; }
+.hero h1 { font-size: clamp(44px, 6vw, 92px); line-height: .96; letter-spacing: -.045em; font-weight: 700; margin: 0 0 28px; }
+.hero h1 em { font-style: normal; }
+.hero p { font-size: 20px; line-height: 1.5; color: var(--muted); max-width: 30em; }
+.section h2, .cc-head h2 { font-size: clamp(30px, 3.4vw, 48px); line-height: 1.05; letter-spacing: -.035em; font-weight: 700; }
+.feat-copy h3 { font-size: clamp(26px, 2.4vw, 34px); letter-spacing: -.03em; }
+.eyebrow { display: none; }
+.muted, .card-body .d, .steps4 p, .model p, .pred p { color: var(--muted); }
+.hero-stats { border-top: 0; padding-top: 8px; gap: 48px; }
+.hero-stats b { font-size: 40px; font-weight: 600; letter-spacing: -.04em; }
+.hero-stats span { font-size: 14px; }
+
+/* sections breathe */
+.section { padding-top: 112px; padding-bottom: 24px; }
+#how { padding-top: 96px; }
+
+/* surfaces: a tone step, not an outline */
+.card, .kpi, .svc, .rep-card, .model, .steps4 li, .pred, .cc-stat, .radar, .radar-out, .featured, .scene, .hud,
+.filters input, .filters select, .how div, .side-card {
+  border-color: transparent !important; }
+#landing .card, #landing .model, #landing .steps4 li, #landing .cc-stat, #landing .featured, #landing .radar { background: var(--s1) !important; }
+#landing .card:hover { background: var(--s2) !important; transform: translateY(-3px); }
+.cc-stats { background: transparent; border: 0; gap: 10px; }
+.cc-stat { border-radius: 14px; }
+.radar-out, .filters input, .filters select { background: var(--s2) !important; }
+.scene { background: #120d0a !important; border-radius: 20px; }
+.hud { background: rgba(23, 17, 13, .92) !important; }
+.vis { background: var(--s2) !important; border-bottom: 0; }
+.featured { border-radius: 20px; }
+.feat-art { background: var(--s2) !important; }
+
+/* how it works: order by position, no index badges or connector rule */
+.steps4::before { display: none; }
+.steps4 .n { display: none; }
+.steps4 li { padding: 28px 24px; border-radius: 16px; }
+.steps4 b { font-size: 22px; letter-spacing: -.02em; }
+
+/* labels: sentence case, readable */
+.sev, .diff, .risk, .sevtag, .crit-tag, .cc-stat small, .tag, .pill, .side-card small, .review-label, .rep-top small {
+  text-transform: none !important; letter-spacing: 0 !important; font-family: inherit !important; }
+.sev, .diff, .risk, .sevtag { font-size: 12.5px; font-weight: 600; }
+.tag { font-size: 13px; }
+.cc-stat b { font-family: inherit; font-weight: 600; letter-spacing: -.04em; font-size: 36px; }
+.card-body .t { font-size: 18px; letter-spacing: -.02em; }
+.card-body .cat, .scene-note { font-size: 13px; font-family: inherit; }
+.model b { font-size: 22px; letter-spacing: -.02em; }
+.foot { border-top: 0; font-size: 14px; padding-bottom: 56px; }
+
+@media (max-width: 1100px) { .hero { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+  .hero h1 { font-size: 44px; }
+  .hero p { font-size: 18px; }
+  .hero-stats { gap: 28px; } .hero-stats b { font-size: 30px; }
+  .section { padding-top: 80px; }
+}
+
+/* headline spans the full width; copy and the 3D scene sit side by side below it */
+@media (min-width: 1101px) {
+  .hero { grid-template-columns: 1fr 1.05fr; column-gap: 56px; row-gap: 0; align-items: start; }
+  .hero-copy { display: contents; }
+  .hero h1 { grid-column: 1 / -1; grid-row: 1; max-width: 15ch; font-size: clamp(64px, 6.4vw, 104px); margin-bottom: 40px; }
+  .hero p { grid-column: 1; grid-row: 2; margin-top: 0; }
+  .hero-cta { grid-column: 1; grid-row: 3; }
+  .hero-stats { grid-column: 1; grid-row: 4; align-self: start; }
+  .scene { grid-column: 2; grid-row: 2 / span 3; height: 460px; }
+}
+.hero h1 { max-width: 15ch; }
+/* numbers first, label under them */
+.cc-stat { display: flex; flex-direction: column-reverse; justify-content: flex-end; }
+/* nothing meant to be read below 13px */
+.hud small, .card-body .cat, .sev, .scene-note, .tab span, .radar-src, .pred ul, .legend, .metric, .crit-tag { font-size: 13px !important; }
+.hud b { font-size: 24px; }
+@media (min-width: 1101px) { .hero h1 { max-width: none; } }
+@media (max-width: 1100px) { .br-wide { display: none; } }
+
+.diff, .risk { text-transform: capitalize !important; }

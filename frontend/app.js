@@ -71,10 +71,10 @@ function cardHTML(s, i) {
       aria-label="Start drill: ${esc(s.title)}" style="animation-delay:${Math.min(i, 12) * 40}ms">
     <div class="vis">${VISUALS[s.category] || ""}<span class="sev">${SEV[s.difficulty]}</span></div>
     <div class="card-body">
-      <span class="cat">${s.icon} ${esc(s.category)}</span>
+      <span class="cat">${esc(s.category)}</span>
       <div class="t">${esc(s.title)}</div>
       <div class="d">${esc(s.description)}</div>
-      <div class="meta"><span class="diff ${s.difficulty}">${s.difficulty}</span><span class="dur">⏱ ~${s.duration} min</span>
+      <div class="meta"><span class="diff ${s.difficulty}">${s.difficulty}</span><span class="dur">~${s.duration} min</span>
         <span class="go">Start drill →</span></div>
     </div>
   </article>`;
@@ -91,9 +91,9 @@ function renderFeatured() {
     </div>
     <div class="feat-copy">
       <div class="feat-tags"><span class="sevtag">${SEV[f.difficulty]} · CRITICAL</span><span class="muted">Featured incident · ${esc(f.category)}</span></div>
-      <h3>${f.icon} ${esc(f.title)}</h3>
+      <h3>${esc(f.title)}</h3>
       <p>${esc(f.description)}</p>
-      <div class="feat-meta"><span class="diff ${f.difficulty}">${f.difficulty}</span><span>⏱ ~${f.duration} min</span></div>
+      <div class="feat-meta"><span class="diff ${f.difficulty}">${f.difficulty}</span><span>~${f.duration} min</span></div>
       <button class="primary big" data-feat="${f.id}">Start simulation →</button>
     </div>`;
   $("featured").querySelector("[data-feat]").onclick = () => start(f.id);
@@ -405,7 +405,7 @@ $("radarForm").onsubmit = async (e) => {
     const r = await api("predict", { change });
     const preds = r.predictions.length ? r.predictions.map((p) => `
       <div class="pred">
-        <div class="pred-top"><b>${p.icon} ${esc(p.title)}</b><span class="diff ${p.difficulty}">${p.difficulty}</span></div>
+        <div class="pred-top"><b>${esc(p.title)}</b><span class="diff ${p.difficulty}">${p.difficulty}</span></div>
         <p>${esc(p.why)}</p>
         ${p.early_signs.length ? `<small class="muted">Early warning signs</small><ul>${p.early_signs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
         ${p.prevent ? `<div class="prevent"><b>Prevent:</b> ${esc(p.prevent)}</div>` : ""}
