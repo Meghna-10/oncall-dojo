@@ -31,6 +31,22 @@ OnCall Dojo gives engineers the same kind of practice.
 6. **You get a blameless post-incident review.** **Nemotron Ultra** reasons over your
    whole timeline and writes what went well, what to improve, and what to drill next.
 
+### Investigation board: evidence graph + multi-hypothesis AI
+
+During a drill, the investigation board draws the 5 services and links each clue **you
+have found** (error log lines, recent deploys, config changes, scheduled jobs) to the
+service it concerns. Clues you haven't discovered stay hidden, so the board organises
+your investigation instead of solving it. **Analyse my evidence** asks Nemotron 3 Super for
+2–3 competing root-cause hypotheses, each with a confidence, evidence for and against,
+and the one command that would confirm or refute it. It never gives the fix, and each
+analysis costs 3 points (`GET /api/evidence`, `POST /api/hypotheses`).
+
+### Verified recovery
+
+The report doesn't take "resolved" on trust. For every service it compares the worst
+error rate and p99 latency while the incident was live with the average of the last 5
+seconds, and it only marks recovery as verified if every service is healthy.
+
 ### Change Risk Radar: predict the outage before you ship
 
 Describe a change you're about to make, for example *"rotating the gateway's JWT key to

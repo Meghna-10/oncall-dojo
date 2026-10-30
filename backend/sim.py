@@ -8,6 +8,7 @@ feel real.
 from __future__ import annotations
 
 import random
+import re
 import time
 from dataclasses import dataclass, field
 
@@ -70,6 +71,8 @@ class Incident:
     commands: list = field(default_factory=list)
     harmful_actions: list = field(default_factory=list)
     hints_used: int = 0
+    analyses_used: int = 0                # AI hypothesis analyses requested
+    peak: dict = field(default_factory=dict)   # worst err/p99 per service while broken
     status_updates: int = 0               # trainee messages to stakeholders
     chat: list = field(default_factory=list)
     configs: dict = field(default_factory=dict)
@@ -138,6 +141,9 @@ class Incident:
                     h[k].append(v)
                     if len(h[k]) > HISTORY_LEN:
                         h[k].pop(0)
+                if t >= self.started and self.broken(t):     # remember the worst, for the recovery check
+                    pk = self.peak.setdefault(s, {"err": 0, "p99": 0})
+                    pk["err"], pk["p99"] = max(pk["err"], vals[1]), max(pk["p99"], vals[2])
             self._emit_logs(t)
             t += 1
         self.last_tick = t - 1
@@ -255,6 +261,75 @@ class Incident:
             "hints_used": self.hints_used,
         }
 
+    # ---------- evidence graph ----------
+    DEPS = [("gateway", "orders"), ("gateway", "payments"), ("orders", "db"),
+            ("payments", "db"), ("orders", "cache"), ("payments", "cache")]
+
+    def evidence(self) -> dict:
+        """What the trainee has actually discovered, linked to the service it concerns.
+
+        Only clues surfaced by commands the trainee ran appear here, so the board
+        organises their investigation instead of solving it for them."""
+        self.tick()
+        services = []
+        for s in SERVICES:
+            h = self.history[s]
+            bad = h["err"][-1] > 5 or h["p99"][-1] > 1500 or h["cpu"][-1] > 90 or h["mem"][-1] > 90
+            services.append({"id": s, "degraded": bad, "err": h["err"][-1], "p99": h["p99"][-1],
+                             "cpu": h["cpu"][-1], "mem": h["mem"][-1]})
+        items, seen = [], set()
+
+        def add(kind, svc, label, detail=""):
+            key = (kind, svc, label)
+            if key not in seen:
+                seen.add(key)
+                items.append({"id": f"e{len(items)}", "kind": kind, "svc": svc, "label": label, "detail": detail})
+
+        for c in self.commands:
+            p = c["cmd"].split()
+            if p[0] == "logs" and len(p) > 1 and p[1] in SERVICES:
+                recent = [l for l in self.logs if l["svc"] == p[1] and l["lvl"] in ("WARN", "ERROR")][-40:]
+                shape = lambda m: re.sub(r"\d+", "#", m)          # same line, different numbers = one clue
+                shapes = [shape(l["msg"]) for l in recent]
+                example = {shape(l["msg"]): l for l in recent}
+                # errors before warnings, then the most repeated: noise is usually a one-off WARN
+                for sh in sorted(set(shapes), key=lambda s: (example[s]["lvl"] == "ERROR", shapes.count(s)), reverse=True)[:2]:
+                    add("log", p[1], example[sh]["msg"][:90], f"seen {shapes.count(sh)}x in {p[1]} logs")
+            elif p[0] == "grep" and len(p) > 1:
+                q = " ".join(p[1:]).lower()
+                for l in [l for l in self.logs if q in l["msg"].lower()][-2:]:
+                    add("log", l["svc"], l["msg"][:90], f"grep '{q}'")
+            elif p[0] == "deploys":
+                for s in ([p[1]] if len(p) > 1 and p[1] in SERVICES else SERVICES):
+                    ver, when = self.deploys[s][0]
+                    if "min ago" in when:
+                        add("deploy", s, f"{s} {ver} deployed {when}", "recent deploy")
+            elif p[:2] == ["config", "diff"] and len(p) > 2 and p[2] in SERVICES:
+                for k, v in self.configs[p[2]].items():
+                    if str(CONFIGS[p[2]].get(k)) != str(v):
+                        add("config", p[2], f"{k}: {CONFIGS[p[2]].get(k)} -> {v}", "config change")
+            elif p[0] == "crontab":
+                for row in CRON[:1] + self.scenario.cron:
+                    name = row.split()[0]
+                    add("cron", "cache" if "redis" in row else "db", f"cron {name}: {' '.join(row.split()[1:6])}", row)
+        return {"services": services, "deps": self.DEPS, "items": items,
+                "commands_run": len(self.commands)}
+
+    def recovery(self) -> dict:
+        """Verified recovery: worst values while broken vs. the last 5 seconds."""
+        self.tick()
+        out, ok = [], True
+        for s in SERVICES:
+            h = self.history[s]
+            last = {k: sum(h[k][-5:]) / 5 for k in ("err", "p99", "cpu", "mem")}
+            healthy = last["err"] <= 5 and last["p99"] <= 1500 and last["cpu"] <= 90 and last["mem"] <= 90
+            ok = ok and healthy
+            pk = self.peak.get(s, {})
+            out.append({"svc": s, "healthy": healthy, "err_peak": pk.get("err", last["err"]),
+                        "err_now": round(last["err"], 2), "p99_peak": pk.get("p99", last["p99"]),
+                        "p99_now": round(last["p99"])})
+        return {"verified": ok and self.resolution == "full", "services": out}
+
     def score(self) -> dict:
         mttr = self.elapsed
         s = 100
@@ -268,6 +343,8 @@ class Incident:
         if h_pen: s -= h_pen; breakdown.append((f"{len(self.harmful_actions)} harmful action(s)", -h_pen))
         hint_pen = self.hints_used * 5
         if hint_pen: s -= hint_pen; breakdown.append((f"{self.hints_used} hint(s) used", -hint_pen))
+        a_pen = self.analyses_used * 3
+        if a_pen: s -= a_pen; breakdown.append((f"{self.analyses_used} AI hypothesis analysis(es)", -a_pen))
         if self.status_updates == 0:
             s -= 10; breakdown.append(("No status update sent to stakeholders", -10))
         investigated = any(c["cmd"].split()[0] in ("logs", "metrics", "deploys", "config") for c in self.commands)

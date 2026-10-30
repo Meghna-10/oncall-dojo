@@ -189,7 +189,71 @@ def end(x_session: str = Header(...)):
     return {**sc, "review": review, "root_cause": inc.scenario.root_cause, "ai": llm.usage_report(),
             "title": inc.scenario.title, "commands": inc.commands,
             "harmful": inc.harmful_actions, "hints": inc.hints_used,
-            "updates": inc.status_updates, "history": inc.history}
+            "updates": inc.status_updates, "history": inc.history, "recovery": inc.recovery(),
+            "analyses": inc.analyses_used}
+
+
+@app.get("/api/evidence")
+def evidence(x_session: str = Header(...)):
+    return _incident(x_session).evidence()
+
+
+def _rule_hypotheses(ev: dict) -> list:
+    """Offline fallback: one hypothesis per discovered change, ranked by how many degraded services it touches."""
+    bad = {s["id"] for s in ev["services"] if s["degraded"]}
+    hyps = []
+    for it in ev["items"]:
+        if it["kind"] in ("deploy", "config", "cron"):
+            hyps.append({"cause": f"{it['label']} caused the {it['svc']} degradation",
+                         "confidence": 60 if it["svc"] in bad else 30,
+                         "supports": [it["label"]], "against": [] if it["svc"] in bad else [f"{it['svc']} looks healthy"],
+                         "next_check": f"logs {it['svc']}"})
+    if not hyps:
+        hyps.append({"cause": "Not enough evidence yet", "confidence": 0, "supports": [],
+                     "against": [], "next_check": "deploys"})
+    return sorted(hyps, key=lambda h: -h["confidence"])[:3]
+
+
+@app.post("/api/hypotheses")
+def hypotheses(x_session: str = Header(...)):
+    """Multi-hypothesis analysis of the evidence the trainee has gathered so far."""
+    inc = _incident(x_session)
+    inc.analyses_used += 1
+    ev = inc.evidence()
+    bad = ", ".join(f"{s['id']} (err {s['err']}%, p99 {s['p99']}ms, cpu {s['cpu']}%, mem {s['mem']}%)"
+                    for s in ev["services"] if s["degraded"]) or "none"
+    found = "\n".join(f"- [{i['kind']}] {i['svc']}: {i['label']}" for i in ev["items"]) or "- (nothing gathered yet)"
+    system = ("You are a senior SRE helping a trainee reason about a live incident. From ONLY the evidence "
+              "listed, propose 2 or 3 competing root-cause hypotheses. For each give a confidence 0-100 "
+              "(they need not sum to 100), the evidence that supports it, any evidence against it, and ONE "
+              "terminal command that would confirm or refute it (commands: status, logs <svc>, metrics <svc>, "
+              "deploys, config diff <svc>, crontab, grep <text>). Never tell them the fix. If the evidence is "
+              "thin, say so with low confidence and suggest what to gather. Keep every text field under 20 "
+              "words and next_check to a single command. Answer JSON only: "
+              '{"hypotheses":[{"cause":"","confidence":0,"supports":[""],"against":[""],"next_check":""}]}')
+    user = f"Pager: {inc.scenario.page}\nDegraded services: {bad}\nEvidence gathered:\n{found}"
+    raw = llm.chat("super", system, user, max_tokens=1600, fallback="")
+    source = "nemotron-3-super"
+    # parse every complete hypothesis object, so a reply cut off mid-way still yields the finished ones
+    found_objs, dec = [], json.JSONDecoder()
+    for m in re.finditer(r'\{\s*"cause"', raw):
+        try:
+            obj, _ = dec.raw_decode(raw[m.start():])
+            found_objs.append(obj)
+        except ValueError:
+            continue
+    try:
+        hyps = [{"cause": str(h.get("cause", ""))[:200], "confidence": max(0, min(100, int(h.get("confidence", 0)))),
+                 "supports": [str(x)[:160] for x in h.get("supports", [])][:3],
+                 "against": [str(x)[:160] for x in h.get("against", [])][:2],
+                 "next_check": str(h.get("next_check", ""))[:80]} for h in found_objs][:3]
+    except (ValueError, TypeError, AttributeError):
+        hyps = []
+    if not hyps:
+        hyps, source = _rule_hypotheses(ev), "rule-fallback"
+    _say(inc, "Coach (Nemotron Super)", f"Analysed {len(ev['items'])} piece(s) of evidence: {len(hyps)} hypotheses on the board.",
+         kind="hint")
+    return {"hypotheses": sorted(hyps, key=lambda h: -h["confidence"]), "source": source, "evidence": ev}
 
 
 class PredictReq(BaseModel):

@@ -199,6 +199,7 @@
         <div><b>AI Coach</b><small>Nemotron 3 Super</small></div>
         <button id="hintBtn" class="coach-btn">💡 Get a hint</button>
       </div>
+      <button id="boardBtn" class="board-btn">Open investigation board · evidence graph &amp; AI hypotheses</button>
       <div id="coachBody" class="coach-body">Stuck? Ask for a hint. The coach knows the root cause but will only point you
         in the right direction. Each hint costs 5 points.</div>
     </div>
@@ -211,6 +212,29 @@
     </div>
   </aside>
 </section>
+
+<!-- ================= INVESTIGATION BOARD ================= -->
+<div id="board" class="hidden" role="dialog" aria-modal="true" aria-labelledby="boardTitle">
+  <div class="board-box">
+    <div class="board-head">
+      <div><h2 id="boardTitle">Investigation board</h2>
+        <p class="muted">Your evidence so far, linked to the services it affects. Only clues you have found appear here.</p></div>
+      <button id="boardClose" class="ghost" aria-label="Close investigation board">Close</button>
+    </div>
+    <div class="board-grid">
+      <div class="board-graph"><svg id="graph" viewBox="0 0 760 440" role="img" aria-label="Evidence graph"></svg>
+        <div class="graph-legend"><span class="lg svc-ok"></span>healthy <span class="lg svc-bad"></span>degraded
+          <span class="lg ev"></span>evidence you found</div>
+      </div>
+      <div class="board-hyp">
+        <h3>Root-cause hypotheses</h3>
+        <p class="muted">Nemotron 3 Super weighs your evidence and proposes competing causes. It never gives you the fix. Costs 3 points.</p>
+        <button id="hypBtn" class="primary">Analyse my evidence</button>
+        <div id="hypOut"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ================= REPORT ================= -->
 <section id="review" class="hidden">
@@ -243,6 +267,10 @@
       <div class="rep-card">
         <h3>Score breakdown</h3>
         <ul id="breakdown" class="breakdown"></ul>
+      </div>
+      <div class="rep-card wide">
+        <h3>Verified recovery</h3>
+        <div id="recovery" class="recovery"></div>
       </div>
       <div class="rep-card wide">
         <h3>Your timeline</h3>
