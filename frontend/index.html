@@ -5,59 +5,133 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OnCall Dojo</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚨</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-<!-- Landing -->
+<!-- ================= LANDING ================= -->
 <section id="landing">
-  <div class="hero">
+  <nav class="nav">
     <div class="logo">🚨 OnCall <span>Dojo</span></div>
-    <h1>A flight simulator for production outages.</h1>
-    <p class="sub">Practise your first 3&nbsp;a.m. incident before it happens for real. An AI breaks a live system,
-      stressed colleagues ping you, a coach nudges you, and Nemotron writes your post-incident review.</p>
-    <div class="how">
-      <div><b>1. Get paged</b>A practice website breaks. Nothing real can be harmed.</div>
-      <div><b>2. Find the cause</b>Use the guide and command buttons. No experience needed.</div>
-      <div><b>3. Fix it and get graded</b>See your score and what to improve.</div>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#scenarios">Scenarios</a>
+      <a href="#models">AI models</a>
+      <a href="https://github.com/Meghna-10/oncall-dojo" target="_blank" rel="noopener">GitHub</a>
     </div>
-    <h2 class="pick">Choose an outage to practise</h2>
+    <button class="primary" data-scroll="scenarios">Start a drill</button>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-copy">
+      <div class="badge"><span class="dot-live"></span> Powered by NVIDIA Nemotron 3 on Nebius</div>
+      <h1>Practise the 3 a.m. outage <em>before</em> it happens.</h1>
+      <p>A flight simulator for production incidents. An AI breaks a realistic system, a stressed manager
+        pings you, a coach guides you, and you get a graded post-incident review.</p>
+      <div class="hero-cta">
+        <button id="randomBtn" class="primary big">🎲 Start a surprise incident</button>
+        <button class="ghost big" data-scroll="scenarios">Choose a scenario</button>
+      </div>
+      <div class="hero-stats">
+        <div><b>4</b><span>realistic outages</span></div>
+        <div><b>3</b><span>Nemotron models</span></div>
+        <div><b>~5 min</b><span>per drill</span></div>
+        <div><b>0</b><span>risk to real systems</span></div>
+      </div>
+    </div>
+
+    <div class="preview" aria-hidden="true">
+      <div class="pv-top">
+        <span class="pv-dots"><i></i><i></i><i></i></span>
+        <span class="pv-title">incident · checkout-api</span>
+        <span class="pill crit">CRITICAL</span>
+      </div>
+      <div class="pv-kpis">
+        <div><small>Error rate</small><b class="red">27.4%</b></div>
+        <div><small>p99 latency</small><b class="amber">4.8s</b></div>
+        <div><small>Degraded</small><b>3 / 5</b></div>
+      </div>
+      <svg class="pv-chart" viewBox="0 0 300 80" preserveAspectRatio="none">
+        <defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#ff5468" stop-opacity=".45"/><stop offset="1" stop-color="#ff5468" stop-opacity="0"/></linearGradient></defs>
+        <path d="M0 70 L40 69 L80 70 L120 68 L150 69 L165 30 L190 22 L215 26 L240 18 L270 24 L300 20 L300 80 L0 80Z" fill="url(#g1)"/>
+        <path d="M0 70 L40 69 L80 70 L120 68 L150 69 L165 30 L190 22 L215 26 L240 18 L270 24 L300 20" fill="none" stroke="#ff5468" stroke-width="2"/>
+      </svg>
+      <div class="pv-msgs">
+        <div class="pv-msg"><b>Priya · Eng Manager</b>Checkout is down. ETA? The CEO is asking.</div>
+        <div class="pv-msg coach"><b>Coach · Nemotron 3 Super</b>Something changed recently. What deployed last?</div>
+      </div>
+    </div>
+  </header>
+
+  <section id="how" class="section">
+    <h2>How it works</h2>
+    <div class="how">
+      <div><span class="num">1</span><b>Get paged</b>A practice production system breaks. Nothing real can be harmed.</div>
+      <div><span class="num">2</span><b>Investigate</b>A step-by-step guide and one-click commands show you where to look.</div>
+      <div><span class="num">3</span><b>Communicate</b>Keep your stressed manager updated. She reacts to what you write.</div>
+      <div><span class="num">4</span><b>Fix &amp; get graded</b>Resolve it, then read your score, timeline and AI review.</div>
+    </div>
+  </section>
+
+  <section id="scenarios" class="section">
+    <h2>Choose an outage to practise</h2>
+    <p class="muted">The root cause stays hidden until your review.</p>
     <div id="cards" class="cards"></div>
-    <button id="randomBtn" class="primary">🎲 Start a surprise incident</button>
-    <div class="powered">Powered by NVIDIA Nemotron Nano · Super · Ultra on Nebius Token Factory</div>
-  </div>
+  </section>
+
+  <section id="models" class="section">
+    <h2>Three Nemotron models, three jobs</h2>
+    <div class="models">
+      <div><span class="tag">Nemotron 3 Nano</span><b>The stressed manager</b>Fast, frequent chat messages that react to your updates.</div>
+      <div><span class="tag">Nemotron 3 Super</span><b>The coach</b>Knows the root cause, but only nudges you where to look.</div>
+      <div><span class="tag">Nemotron 3 Ultra</span><b>The reviewer</b>Reasons over your whole timeline and writes your report.</div>
+    </div>
+  </section>
+
+  <footer class="foot">OnCall Dojo · open source (MIT) · NVIDIA Nemotron 3 on Nebius Token Factory</footer>
 </section>
 
-<!-- Pager -->
+<!-- ================= PAGER ================= -->
 <div id="pager" class="hidden">
   <div class="pager-box">
     <div class="pager-icon">📟</div>
     <div class="pager-label">YOU ARE BEING PAGED</div>
     <div id="pagerText" class="pager-text"></div>
-    <button id="ackBtn" class="danger">Acknowledge</button>
+    <button id="ackBtn" class="danger">Acknowledge &amp; start</button>
   </div>
 </div>
 
-<!-- Incident -->
+<!-- ================= INCIDENT ================= -->
 <section id="incident" class="hidden">
-  <header class="bar">
+  <aside class="side">
     <div class="logo small">🚨 OnCall <span>Dojo</span></div>
-    <div id="incTitle" class="inc-title"></div>
-    <div id="statusPill" class="pill crit">CRITICAL</div>
-    <div id="timer" class="timer">00:00</div>
-    <div class="spacer"></div>
+    <div class="side-card">
+      <small>INCIDENT</small>
+      <div id="incTitle" class="inc-title"></div>
+      <div class="side-row"><span id="statusPill" class="pill crit">CRITICAL</span><span id="timer" class="timer">00:00</span></div>
+    </div>
+    <div class="side-card">
+      <small>YOUR MISSION</small>
+      <ol id="missionSteps" class="steps"></ol>
+    </div>
     <div id="aiMode" class="ai-mode"></div>
-    <button id="hintBtn">💡 Hint</button>
-    <button id="endBtn" class="primary">End &amp; review</button>
-  </header>
+    <button id="endBtn" class="primary wide">End &amp; review</button>
+  </aside>
 
-  <main class="grid">
+  <main class="work">
+    <div id="missionText" class="next"></div>
+    <div class="kpis">
+      <div class="kpi"><small>Error rate (gateway)</small><b id="kErr">–</b></div>
+      <div class="kpi"><small>p99 latency (gateway)</small><b id="kP99">–</b></div>
+      <div class="kpi"><small>Services degraded</small><b id="kBad">–</b></div>
+      <div class="kpi"><small>Status updates sent</small><b id="kUpd">0</b></div>
+    </div>
     <div class="dash" id="dash"></div>
-
     <div class="term">
-      <div class="mission">
-        <div id="missionSteps" class="steps"></div>
-        <div id="missionText" class="mission-text"></div>
+      <div class="term-head"><span>Terminal · prod-bastion-01</span>
         <div class="quick">
           <button data-cmd="status">Check all services</button>
           <button data-cmd="logs db">Database logs</button>
@@ -68,38 +142,76 @@
         </div>
       </div>
       <div id="termOut" class="term-out"></div>
-      <div class="term-in"><span class="ps">oncall@prod:~$</span><input id="termIn" autocomplete="off" spellcheck="false"></div>
+      <div class="term-in"><span class="ps">oncall@prod:~$</span><input id="termIn" autocomplete="off" spellcheck="false" placeholder="type a command, e.g. logs orders"></div>
     </div>
+  </main>
 
-    <aside class="chat">
+  <aside class="right">
+    <div class="coach">
+      <div class="coach-head">
+        <div><b>AI Coach</b><small>Nemotron 3 Super</small></div>
+        <button id="hintBtn" class="coach-btn">💡 Get a hint</button>
+      </div>
+      <div id="coachBody" class="coach-body">Stuck? Ask for a hint. The coach knows the root cause but will only point you
+        in the right direction. Each hint costs 5 points.</div>
+    </div>
+    <div class="chat">
       <div class="chat-head"># incident-war-room</div>
       <div id="chatLog" class="chat-log"></div>
       <form id="chatForm" class="chat-in">
         <input id="chatIn" placeholder="Post a status update to the team…" autocomplete="off">
       </form>
-    </aside>
-  </main>
+    </div>
+  </aside>
 </section>
 
-<!-- Review -->
-<div id="review" class="hidden">
-  <div class="review-box">
-    <div class="review-top">
-      <div id="grade" class="grade">A</div>
+<!-- ================= REPORT ================= -->
+<section id="review" class="hidden">
+  <div class="report">
+    <div class="rep-top">
       <div>
-        <div id="scoreLine" class="score-line"></div>
-        <ul id="breakdown" class="breakdown"></ul>
+        <small>POST-INCIDENT REPORT</small>
+        <h1 id="repTitle"></h1>
+        <p class="muted" id="repSub"></p>
       </div>
-    </div>
-    <div class="review-label">Post-incident review · written by Nemotron Ultra</div>
-    <div id="reviewText" class="review-text"></div>
-    <div class="review-label">AI used in this drill</div>
-    <div id="aiUsage" class="ai-usage"></div>
-    <div class="review-actions">
       <button id="againBtn" class="primary">Run another drill</button>
     </div>
+
+    <div class="rep-grid">
+      <div class="rep-card score-card">
+        <div class="ring" id="ring"><div id="grade" class="grade">A</div></div>
+        <div id="scoreLine" class="score-line"></div>
+      </div>
+      <div class="rep-card stats">
+        <div><small>Time to resolve</small><b id="sMttr">–</b></div>
+        <div><small>Commands run</small><b id="sCmds">–</b></div>
+        <div><small>Hints used</small><b id="sHints">–</b></div>
+        <div><small>Harmful actions</small><b id="sHarm">–</b></div>
+      </div>
+      <div class="rep-card">
+        <h3>Gateway error rate during the drill</h3>
+        <canvas id="repChart"></canvas>
+        <div class="legend"><span class="lg-red"></span>error rate (last 90 s)</div>
+      </div>
+      <div class="rep-card">
+        <h3>Score breakdown</h3>
+        <ul id="breakdown" class="breakdown"></ul>
+      </div>
+      <div class="rep-card wide">
+        <h3>Your timeline</h3>
+        <ol id="timeline" class="timeline"></ol>
+      </div>
+      <div class="rep-card wide">
+        <h3>Review by Nemotron 3 Ultra</h3>
+        <div id="reviewText" class="review-text"></div>
+      </div>
+      <div class="rep-card wide">
+        <h3>Nemotron usage on this server (since it started)</h3>
+        <div id="aiUsage" class="ai-usage"></div>
+      </div>
+    </div>
   </div>
-</div>
+</section>
 
 <script src="/static/app.js"></script>
 </body>

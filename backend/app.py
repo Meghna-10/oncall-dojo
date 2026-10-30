@@ -187,8 +187,12 @@ def end(x_session: str = Header(...)):
                 f"in {sc['mttr']}s.\n\n## Root cause\n{inc.scenario.root_cause}\n\n"
                 "## What to improve\n" + ("\n".join(f"- {b[0]}" for b in sc["breakdown"]) or "- Nothing - clean run!")
                 + "\n\n_(offline mode: set NEBIUS_API_KEY for a full Nemotron Ultra review)_")
-    review = llm.chat("ultra", system, user, max_tokens=900, fallback=fallback)
-    return {**sc, "review": review, "root_cause": inc.scenario.root_cause, "ai": llm.usage_report()}
+    # Ultra reasons before it writes; 900 tokens cut reviews off mid-sentence
+    review = llm.chat("ultra", system, user, max_tokens=2500, fallback=fallback)
+    return {**sc, "review": review, "root_cause": inc.scenario.root_cause, "ai": llm.usage_report(),
+            "title": inc.scenario.title, "commands": inc.commands,
+            "harmful": inc.harmful_actions, "hints": inc.hints_used,
+            "updates": inc.status_updates, "history": inc.history}
 
 
 @app.get("/")
