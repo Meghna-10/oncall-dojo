@@ -31,6 +31,16 @@ OnCall Dojo gives engineers the same kind of practice.
 6. **You get a blameless post-incident review.** **Nemotron Ultra** reasons over your
    whole timeline and writes what went well, what to improve, and what to drill next.
 
+### Change Risk Radar: predict the outage before you ship
+
+Describe a change you're about to make, for example *"rotating the gateway's JWT key to
+k2 tonight"*. Nemotron 3 Super runs a pre-mortem against the incident library and returns
+a risk level, the outages the change could cause, early warning signs to watch and a
+safeguard. Each prediction has a **Practise this outage** button that starts that exact
+drill. Predictions are limited to real scenarios in the library (unknown ids are
+discarded) and are labelled as an AI estimate. If the AI is unavailable, the Radar falls
+back to keyword matching and says so (`POST /api/predict`).
+
 ## How NVIDIA Nemotron and Nebius Token Factory are used
 
 | Model (via Token Factory) | Job | Why this tier |

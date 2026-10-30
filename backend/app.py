@@ -192,6 +192,64 @@ def end(x_session: str = Header(...)):
             "updates": inc.status_updates, "history": inc.history}
 
 
+class PredictReq(BaseModel):
+    change: str
+
+
+def _keyword_predictions(change: str) -> list:
+    """Offline fallback: rank library scenarios by words shared with the change."""
+    words = {w for w in re.findall(r"[a-z0-9_]{3,}", change.lower())}
+    scored = []
+    for s in SCENARIOS.values():
+        text = f"{s.title} {s.description} {s.root_cause} {' '.join(s.fixes)}".lower()
+        hits = sum(1 for w in words if w in text)
+        if hits:
+            scored.append((hits, s))
+    scored.sort(key=lambda x: -x[0])
+    return [{"scenario_id": s.id, "why": s.root_cause.split(". ")[0] + ".",
+             "early_signs": [s.page], "prevent": f"Know the fix before you ship: {next(iter(s.fixes))}"}
+            for _, s in scored[:3]]
+
+
+@app.post("/api/predict")
+def predict(req: PredictReq):
+    """Change Risk Radar: predict which outages a planned change could cause."""
+    change = req.change.strip()[:1200]
+    if len(change) < 8:
+        raise HTTPException(400, "describe the change in a sentence or two")
+    catalog = "\n".join(f"- {s.id}: {s.title}. Cause pattern: {s.root_cause}" for s in SCENARIOS.values())
+    system = ("You are a principal SRE doing a pre-mortem on a change an engineer is about to ship. "
+              "Using ONLY the outage patterns in the catalog, predict which ones this change could cause. "
+              "Answer with JSON only, no markdown, in this exact shape: "
+              '{"risk":"low|medium|high","summary":"one sentence","predictions":[{"scenario_id":"<id from catalog>",'
+              '"why":"one sentence linking the change to this failure","early_signs":["metric or log to watch",'
+              '"..."],"prevent":"one concrete safeguard"}]}. Give 1 to 3 predictions, most likely first. '
+              "If the change looks safe, use risk low and an empty predictions list. Never mention catalog "
+              "ids or the word 'pattern' in your sentences; write for the engineer.")
+    user = f"Outage catalog:\n{catalog}\n\nPlanned change:\n{change}"
+    raw = llm.chat("super", system, user, max_tokens=900, fallback="")
+    result, source = None, "nemotron-3-super"
+    try:
+        start = raw.index("{")
+        data = json.loads(raw[start:raw.rindex("}") + 1])
+        preds = [p for p in data.get("predictions", []) if p.get("scenario_id") in SCENARIOS][:3]
+        if data.get("risk") in ("low", "medium", "high"):
+            result = {"risk": data["risk"], "summary": str(data.get("summary", ""))[:300],
+                      "predictions": [] if data["risk"] == "low" else preds}
+    except (ValueError, AttributeError, TypeError):
+        result = None
+    if result is None:  # AI offline or unparseable: say so and fall back to keyword matching
+        preds = _keyword_predictions(change)
+        result = {"risk": "medium" if preds else "low", "predictions": preds,
+                  "summary": "Keyword match against the incident library (AI estimate unavailable)."}
+        source = "keyword-fallback"
+    for p in result["predictions"]:
+        s = SCENARIOS[p["scenario_id"]]
+        p.update(title=s.title, icon=s.icon, category=s.category, difficulty=s.difficulty)
+        p["early_signs"] = [str(x) for x in p.get("early_signs", [])][:3]
+    return {**result, "source": source, "ai": llm.usage_report()["online"]}
+
+
 @app.get("/")
 def index():
     return FileResponse(FRONTEND / "index.html")

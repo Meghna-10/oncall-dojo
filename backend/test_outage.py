@@ -19,4 +19,9 @@ r = c.post("/api/end", headers=H).json()
 took = time.time() - t0
 assert hint and r["review"] and took < 10, took
 assert c.get("/api/state", headers={"X-Session": "gone"}).status_code == 404
+# Risk Radar falls back to keyword matching, says so, and never invents scenario ids
+r = c.post("/api/predict", json={"change": "lowering the orders db pool_size to 5"}).json()
+assert r["source"] == "keyword-fallback" and r["predictions"], r
+assert all(p["scenario_id"] in __import__("sim").SCENARIOS for p in r["predictions"])
+assert c.post("/api/predict", json={"change": "hi"}).status_code == 400
 print(f"API down: hint + review fell back in {took:.1f}s; unknown session -> 404")

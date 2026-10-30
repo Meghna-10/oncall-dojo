@@ -158,7 +158,7 @@ async function refresh() {
     $(svc + "-p99").textContent = last("p99") + "ms";
     $(svc + "-res").textContent = `${last("cpu")}% / ${last("mem")}%`;
     spark($(svc + "-cErr"), h.err, b ? "#ff5468" : "#3ddc84");
-    spark($(svc + "-cP99"), h.p99, "#c9d6e3");
+    spark($(svc + "-cP99"), h.p99, "#60a5fa");
   }
   const g = s.history.gateway, gl = (k) => g[k][g[k].length - 1];
   $("kErr").textContent = gl("err") + "%";
@@ -320,7 +320,7 @@ function tilt(el, max) {
   });
   el.addEventListener("mouseleave", () => (el.style.transform = ""));
 }
-tilt(document.querySelector(".preview"), 14);
+document.querySelectorAll(".model").forEach((m) => tilt(m, 8));
 const io = "IntersectionObserver" in window
   ? new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add("in")), { threshold: 0.12 })
   : null;
@@ -328,5 +328,36 @@ document.querySelectorAll("#landing .section").forEach((s) => {
   if (calm || !io) return;
   s.classList.add("reveal"); io.observe(s);
 });
+
+// ---------- Change Risk Radar ----------
+document.querySelectorAll(".chip").forEach((c) => (c.onclick = () => { $("radarIn").value = c.dataset.ex; $("radarIn").focus(); }));
+$("radarForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const change = $("radarIn").value.trim();
+  if (change.length < 8) { $("radarIn").focus(); return; }
+  $("radarBtn").disabled = true; $("radarBtn").textContent = "Analysing…";
+  $("radarOut").innerHTML = `<div class="radar-empty"><div class="radar-ring"></div><p class="muted">Nemotron 3 Super is running a pre-mortem…</p></div>`;
+  try {
+    const r = await api("predict", { change });
+    const preds = r.predictions.length ? r.predictions.map((p) => `
+      <div class="pred">
+        <div class="pred-top"><b>${p.icon} ${esc(p.title)}</b><span class="diff ${p.difficulty}">${p.difficulty}</span></div>
+        <p>${esc(p.why)}</p>
+        ${p.early_signs.length ? `<small class="muted">Early warning signs</small><ul>${p.early_signs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+        ${p.prevent ? `<div class="prevent"><b>Prevent:</b> ${esc(p.prevent)}</div>` : ""}
+        <button class="ghost" data-drill="${p.scenario_id}" style="margin-top:10px">Practise this outage →</button>
+      </div>`).join("") : `<p class="muted" style="margin-top:12px">No matching outage in the library. This change looks low-risk.</p>`;
+    $("radarOut").innerHTML = `
+      <div class="risk-head"><span class="risk ${r.risk}">${r.risk} risk</span></div>
+      <div>${esc(r.summary)}</div>${preds}
+      <div class="radar-src">${r.source === "keyword-fallback" ? "AI offline: matched by keywords against the incident library."
+        : "AI estimate by Nemotron 3 Super. A prediction, not a guarantee."}</div>`;
+    document.querySelectorAll("[data-drill]").forEach((b) => (b.onclick = () => start(b.dataset.drill)));
+  } catch (err) {
+    $("radarOut").innerHTML = `<p class="muted">Couldn't analyse that change. Please try again.</p>`;
+  } finally {
+    $("radarBtn").disabled = false; $("radarBtn").textContent = "Predict risks";
+  }
+};
 
 loadScenarios();

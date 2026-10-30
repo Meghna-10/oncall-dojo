@@ -19,67 +19,55 @@
     <div class="nav-links">
       <a href="#how">How it works</a>
       <a href="#scenarios">Scenarios</a>
-      <a href="#models">AI models</a>    </div>
+      <a href="#radar">Risk Radar</a>
+      <a href="#models">AI models</a>
+    </div>
     <button class="primary" data-scroll="scenarios">Start a drill</button>
   </nav>
 
   <header class="hero">
     <div class="hero-copy">
-      <div class="badge"><span class="dot-live"></span> Powered by NVIDIA Nemotron 3 on Nebius</div>
-      <h1>Practise the 3 a.m. outage <em>before</em> it happens.</h1>
-      <p>A flight simulator for production incidents. An AI breaks a realistic system, a stressed manager
-        pings you, a coach guides you, and you get a graded post-incident review.</p>
+      <div class="badge"><span class="dot-live"></span> NVIDIA Nemotron 3 · Nebius Token Factory</div>
+      <h1>Master production incidents <em>before they happen.</em></h1>
+      <p>An incident-response flight simulator. Practise realistic outages, investigate a live system,
+        keep a stressed team updated, and get an AI-written post-incident review.</p>
       <div class="hero-cta">
-        <button id="randomBtn" class="primary big">🎲 Start a surprise incident</button>
-        <button class="ghost big" data-scroll="scenarios">Choose a scenario</button>
+        <button id="randomBtn" class="primary big">Start a surprise incident</button>
+        <button class="ghost big" data-scroll="scenarios">Explore scenarios →</button>
       </div>
       <div class="hero-stats">
-        <div><b id="nScen">21</b><span>realistic outages</span></div>
+        <div><b id="nScen">21</b><span>outage scenarios</span></div>
         <div><b>3</b><span>Nemotron models</span></div>
-        <div><b>~5 min</b><span>per drill</span></div>
         <div><b>0</b><span>risk to real systems</span></div>
       </div>
     </div>
 
-    <div class="preview" aria-hidden="true">
-      <div class="pv-top">
-        <span class="pv-dots"><i></i><i></i><i></i></span>
-        <span class="pv-title">incident · checkout-api</span>
-        <span class="pill crit">CRITICAL</span>
-      </div>
-      <div class="pv-kpis">
-        <div><small>Error rate</small><b class="red">27.4%</b></div>
-        <div><small>p99 latency</small><b class="amber">4.8s</b></div>
-        <div><small>Degraded</small><b>3 / 5</b></div>
-      </div>
-      <svg class="pv-chart" viewBox="0 0 300 80" preserveAspectRatio="none">
-        <defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stop-color="#ff5468" stop-opacity=".45"/><stop offset="1" stop-color="#ff5468" stop-opacity="0"/></linearGradient></defs>
-        <path d="M0 70 L40 69 L80 70 L120 68 L150 69 L165 30 L190 22 L215 26 L240 18 L270 24 L300 20 L300 80 L0 80Z" fill="url(#g1)"/>
-        <path d="M0 70 L40 69 L80 70 L120 68 L150 69 L165 30 L190 22 L215 26 L240 18 L270 24 L300 20" fill="none" stroke="#ff5468" stroke-width="2"/>
-      </svg>
-      <div class="pv-msgs">
-        <div class="pv-msg"><b>Priya · Eng Manager</b>Checkout is down. ETA? The CEO is asking.</div>
-        <div class="pv-msg coach"><b>Coach · Nemotron 3 Super</b>Something changed recently. What deployed last?</div>
-      </div>
+    <div class="scene" id="scene" aria-label="Animated preview of a simulated production system with one failing database">
+      <canvas id="sceneCanvas"></canvas>
+      <div class="hud hud-a"><small>gateway · error rate</small><b class="red">27.4%</b><i class="mini-bar"><i></i></i></div>
+      <div class="hud hud-b"><small>p99 latency</small><b class="amber">4.8 s</b></div>
+      <div class="hud hud-c crit-tag"><span class="pulse-dot"></span> CRITICAL · db-primary</div>
+      <div class="scene-note">Simulated environment</div>
     </div>
   </header>
 
   <section id="how" class="section">
-    <h2>How it works</h2>
-    <div class="how">
-      <div><span class="num">1</span><b>Get paged</b>A practice production system breaks. Nothing real can be harmed.</div>
-      <div><span class="num">2</span><b>Investigate</b>A step-by-step guide and one-click commands show you where to look.</div>
-      <div><span class="num">3</span><b>Communicate</b>Keep your stressed manager updated. She reacts to what you write.</div>
-      <div><span class="num">4</span><b>Fix &amp; get graded</b>Resolve it, then read your score, timeline and AI review.</div>
-    </div>
+    <div class="eyebrow">How it works</div>
+    <h2>From page to post-mortem in one drill</h2>
+    <ol class="steps4">
+      <li><span class="n">01</span><b>Get paged</b><p>A simulated production system breaks. Nothing real can be harmed.</p></li>
+      <li><span class="n">02</span><b>Investigate</b><p>Live metrics, logs, deploys and configs, with a guide and one-click commands.</p></li>
+      <li><span class="n">03</span><b>Communicate</b><p>Keep a stressed manager updated. She reacts to what you actually write.</p></li>
+      <li><span class="n">04</span><b>Fix &amp; get graded</b><p>Resolve it, then get a score, a timeline and an AI-written review.</p></li>
+    </ol>
   </section>
 
   <section id="scenarios" class="section">
     <div class="lib-head">
       <div>
-        <h2>Incident library</h2>
-        <p class="muted">Real-world outage types. The root cause stays hidden until your review.</p>
+        <div class="eyebrow">Incident library</div>
+        <h2>Pick an outage to practise</h2>
+        <p class="muted">Real-world failure types. The root cause stays hidden until your review.</p>
       </div>
       <button id="randomBtn2" class="ghost">🎲 Random incident</button>
     </div>
@@ -99,12 +87,40 @@
     <div id="cards" class="cards"></div>
   </section>
 
+  <section id="radar" class="section">
+    <div class="radar">
+      <div class="radar-copy">
+        <div class="eyebrow">Change Risk Radar · AI agent</div>
+        <h2>Predict the outage before you ship</h2>
+        <p class="muted">Describe a change you're about to make. Nemotron 3 Super runs a pre-mortem against the
+          incident library: which outages it could cause, the early warning signs, and how to prevent them.
+          Then rehearse that exact failure.</p>
+        <div class="chips">
+          <button class="chip" data-ex="Lowering the orders database connection pool from 50 to 10 to save memory">Shrink DB pool</button>
+          <button class="chip" data-ex="Rotating the JWT signing key on the gateway to k2 tonight">Rotate JWT key</button>
+          <button class="chip" data-ex="Adding a nightly job that exports all orders to a CSV report at 9am">New report job</button>
+          <button class="chip" data-ex="Switching the internal DNS record for payments to the new cluster">Move DNS record</button>
+        </div>
+        <form id="radarForm" class="radar-form">
+          <textarea id="radarIn" rows="3" placeholder="e.g. Raising the gateway retry count from 2 to 5 for flaky upstreams"></textarea>
+          <button id="radarBtn" class="primary">Predict risks</button>
+        </form>
+      </div>
+      <div id="radarOut" class="radar-out"><div class="radar-empty">
+        <div class="radar-ring"></div><p class="muted">Your prediction will appear here.</p></div></div>
+    </div>
+  </section>
+
   <section id="models" class="section">
-    <h2>Three Nemotron models, three jobs</h2>
+    <div class="eyebrow">AI models</div>
+    <h2>Three Nemotron models, three distinct jobs</h2>
     <div class="models">
-      <div><span class="tag">Nemotron 3 Nano</span><b>The stressed manager</b>Fast, frequent chat messages that react to your updates.</div>
-      <div><span class="tag">Nemotron 3 Super</span><b>The coach</b>Knows the root cause, but only nudges you where to look.</div>
-      <div><span class="tag">Nemotron 3 Ultra</span><b>The reviewer</b>Reasons over your whole timeline and writes your report.</div>
+      <div class="model"><span class="tag">Nemotron 3 Nano</span><b>The stressed manager</b>
+        <p>Plays your manager and support agent. Called every ~40 s, so it must be fast: replies in about 2 s with reasoning off.</p></div>
+      <div class="model"><span class="tag">Nemotron 3 Super</span><b>The coach &amp; risk analyst</b>
+        <p>Knows the hidden root cause and nudges you where to look. Also powers the Change Risk Radar's pre-mortem.</p></div>
+      <div class="model"><span class="tag">Nemotron 3 Ultra</span><b>The reviewer</b>
+        <p>Reasons over your whole timeline (reasoning on) and writes a blameless post-incident review.</p></div>
     </div>
   </section>
 
@@ -235,5 +251,6 @@
 </section>
 
 <script src="/static/app.js"></script>
+<script src="/static/scene3d.js" defer></script>
 </body>
 </html>
